@@ -1,0 +1,22 @@
+# Angular
+frontend/blinkit-frontend/node_modules/
+frontend/blinkit-frontend/dist/
+frontend/blinkit-frontend/.angular/
+
+# .NET
+backend/BlinkitAPI/bin/
+backend/BlinkitAPI/obj/
+
+# Environment & secrets
+appsettings.Development.json
+*.env
+.env
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+
+# OS files
+.DS_Store
+Thumbs.db
