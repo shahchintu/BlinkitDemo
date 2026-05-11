@@ -1,8 +1,8 @@
 # TASK-TRACKER.md  [~] starting · [x] done
 
-## Phase 01 — Infrastructure
-| Backend | [ ] docker-compose.yml · [ ] .NET sln (4 projects) · [ ] Program.cs skeleton · [ ] GET /api/health |
-| Angular | [ ] ng new · [ ] Tailwind+Material+NgRx · [ ] core/models/index.ts · [ ] app.routes.ts · [ ] utils.ts |
+## Phase 01 — Infrastructure ✓ COMPLETE
+| Backend | [x] docker-compose.yml · [x] .NET sln (4 projects) · [x] Program.cs skeleton · [x] GET /api/health |
+| Angular | [x] ng new · [x] Tailwind+Material+NgRx · [x] core/models/index.ts · [x] app.routes.ts · [x] utils.ts |
 
 ## Phase 02 — Auth
 | Backend | [ ] AppUser entity · [ ] BlinkitDbContext · [ ] JwtTokenService · [ ] AuthController (register/login/refresh/logout) |

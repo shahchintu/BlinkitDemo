@@ -6,7 +6,7 @@ Architecture: Parallel feature-by-feature · Real APIs only · SQL Server
 > Build backend first, verify in Scalar, then build Angular UI.
 > No of(), no mock data, no delay() anywhere.
 
-## Phase 00a [x]  Phase 00b [ ]  Phase 01 [ ]
+## Phase 00a [x]  Phase 00b [ ]  Phase 01 [x]
 ## Phase 02 [ ] — Auth (backend + Angular together)
 ## Phase 03 [ ] — Products (backend + Angular together)
 ## Phase 04 [ ] — Cart (backend + Angular together)
@@ -20,3 +20,4 @@ Architecture: Parallel feature-by-feature · Real APIs only · SQL Server
 | Timestamp | Phase | Summary | Developer |
 |-----------|-------|---------|-----------|
 | 2026-05-11 | 00a | Project docs generated | — |
+| 2026-05-11 | 01  | Infrastructure scaffolded — docker-compose, 4-project .NET sln, Angular 19 + all packages, models, routes, utils | — |

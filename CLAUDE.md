@@ -118,7 +118,14 @@ blinkit-error:#F44336 · blinkit-purple:#673AB7
 | 08  | feat: phase-08-polish-deploy |
 | 09  | feat: phase-09-ai-azure |
 
-## Referenced Files  [empty — built up phase by phase]
+## Referenced Files
+- [docker-compose.yml](docker-compose.yml) — SQL Server 2022 + Redis 7-alpine
+- [.env.example](.env.example) — all required env vars
+- [backend/BlinkitAPI/Blinkit.sln](backend/BlinkitAPI/Blinkit.sln) — 4-project Clean Architecture solution
+- [backend/BlinkitAPI/src/Blinkit.API/Program.cs](backend/BlinkitAPI/src/Blinkit.API/Program.cs) — CORS, JWT, Scalar, /api/health
+- [frontend/blinkit-frontend/src/app/core/models/index.ts](frontend/blinkit-frontend/src/app/core/models/index.ts) — all interfaces
+- [frontend/blinkit-frontend/src/app/app.routes.ts](frontend/blinkit-frontend/src/app/app.routes.ts) — full lazy route tree
+- [frontend/blinkit-frontend/src/app/shared/utils.ts](frontend/blinkit-frontend/src/app/shared/utils.ts) — formatPrice, getCategoryFallback, etc.
 
 ## Current Phase
-Phase 00a — Project Documents | Status: Complete
+Phase 01 — Infrastructure | Status: Complete

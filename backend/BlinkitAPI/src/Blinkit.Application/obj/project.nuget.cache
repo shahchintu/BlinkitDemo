@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "dgSpecHash": "u+s/2IAdK6ozPHTCNZXMMwYtH4KldQGP5CznSIsz7GY2dK/23XA4aQ24GItSJUpFBZ/mOODjazGYq0ZLzvaJhg==",
+  "success": true,
+  "projectFilePath": "H:\\Claude - Blinkit Project\\BlinkitDemo\\backend\\BlinkitAPI\\src\\Blinkit.Application\\Blinkit.Application.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Chintan.shah\\.nuget\\packages\\automapper\\16.1.1\\automapper.16.1.1.nupkg.sha512",
+    "C:\\Users\\Chintan.shah\\.nuget\\packages\\fluentvalidation\\12.1.1\\fluentvalidation.12.1.1.nupkg.sha512",
+    "C:\\Users\\Chintan.shah\\.nuget\\packages\\mediatr\\14.1.0\\mediatr.14.1.0.nupkg.sha512",
+    "C:\\Users\\Chintan.shah\\.nuget\\packages\\mediatr.contracts\\2.0.1\\mediatr.contracts.2.0.1.nupkg.sha512",
+    "C:\\Users\\Chintan.shah\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\10.0.0\\microsoft.extensions.dependencyinjection.abstractions.10.0.0.nupkg.sha512",
+    "C:\\Users\\Chintan.shah\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\10.0.0\\microsoft.extensions.logging.abstractions.10.0.0.nupkg.sha512",
+    "C:\\Users\\Chintan.shah\\.nuget\\packages\\microsoft.extensions.options\\10.0.0\\microsoft.extensions.options.10.0.0.nupkg.sha512",
+    "C:\\Users\\Chintan.shah\\.nuget\\packages\\microsoft.extensions.primitives\\10.0.0\\microsoft.extensions.primitives.10.0.0.nupkg.sha512",
+    "C:\\Users\\Chintan.shah\\.nuget\\packages\\microsoft.identitymodel.abstractions\\8.14.0\\microsoft.identitymodel.abstractions.8.14.0.nupkg.sha512",
+    "C:\\Users\\Chintan.shah\\.nuget\\packages\\microsoft.identitymodel.jsonwebtokens\\8.14.0\\microsoft.identitymodel.jsonwebtokens.8.14.0.nupkg.sha512",
+    "C:\\Users\\Chintan.shah\\.nuget\\packages\\microsoft.identitymodel.logging\\8.14.0\\microsoft.identitymodel.logging.8.14.0.nupkg.sha512",
+    "C:\\Users\\Chintan.shah\\.nuget\\packages\\microsoft.identitymodel.tokens\\8.14.0\\microsoft.identitymodel.tokens.8.14.0.nupkg.sha512",
+    "C:\\Users\\Chintan.shah\\.nuget\\packages\\system.diagnostics.diagnosticsource\\10.0.0\\system.diagnostics.diagnosticsource.10.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}
