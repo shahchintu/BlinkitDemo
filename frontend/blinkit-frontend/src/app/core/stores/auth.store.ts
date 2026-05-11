@@ -1,0 +1,30 @@
+import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
+import { IUser } from '../models';
+
+interface AuthState {
+  currentUser: IUser | null;
+  accessToken: string | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+}
+
+export const AuthStore = signalStore(
+  { providedIn: 'root' },
+  withState<AuthState>({
+    currentUser: null,
+    accessToken: null,
+    isAuthenticated: false,
+    isLoading: false,
+  }),
+  withMethods(store => ({
+    setAuth(user: IUser, token: string): void {
+      patchState(store, { currentUser: user, accessToken: token, isAuthenticated: true });
+    },
+    clearAuth(): void {
+      patchState(store, { currentUser: null, accessToken: null, isAuthenticated: false });
+    },
+    setLoading(isLoading: boolean): void {
+      patchState(store, { isLoading });
+    },
+  }))
+);

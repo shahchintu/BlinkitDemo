@@ -1735,7 +1735,10 @@
         },
         "runtime": {
           "bin/placeholder/Blinkit.Application.dll": {}
-        }
+        },
+        "frameworkReferences": [
+          "Microsoft.AspNetCore.App"
+        ]
       },
       "Blinkit.Domain/1.0.0": {
         "type": "project",
@@ -1745,7 +1748,10 @@
         },
         "runtime": {
           "bin/placeholder/Blinkit.Domain.dll": {}
-        }
+        },
+        "frameworkReferences": [
+          "Microsoft.AspNetCore.App"
+        ]
       }
     }
   },

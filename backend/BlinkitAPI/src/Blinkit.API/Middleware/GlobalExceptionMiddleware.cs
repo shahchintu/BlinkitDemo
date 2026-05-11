@@ -22,6 +22,9 @@ public sealed class GlobalExceptionMiddleware(RequestDelegate next, ILogger<Glob
             UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "Unauthorized"),
             KeyNotFoundException => (StatusCodes.Status404NotFound, ex.Message),
             ArgumentException => (StatusCodes.Status400BadRequest, ex.Message),
+            ApplicationException ae when ae.Message is "Email already in use" => (StatusCodes.Status409Conflict, ae.Message),
+            ApplicationException ae when ae.Message is "Invalid credentials" or "Invalid refresh token" => (StatusCodes.Status401Unauthorized, ae.Message),
+            ApplicationException => (StatusCodes.Status400BadRequest, ex.Message),
             _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred")
         };
 

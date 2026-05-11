@@ -1,6 +1,24 @@
 export type OrderStatus = 'Placed' | 'Packed' | 'OutForDelivery' | 'Delivered' | 'Cancelled';
 export type PaymentStatus = 'Pending' | 'Paid' | 'Failed' | 'Refunded';
 
+export interface ILoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface IRegisterRequest {
+  fullName: string;
+  email: string;
+  phone: string;
+  password: string;
+}
+
+export interface IAuthResponse {
+  accessToken: string;
+  expiresIn: number;
+  user: IUser;
+}
+
 export interface IProductAttribute {
   key: string;
   value: string;

@@ -4,9 +4,9 @@
 | Backend | [x] docker-compose.yml · [x] .NET sln (4 projects) · [x] Program.cs skeleton · [x] GET /api/health |
 | Angular | [x] ng new · [x] Tailwind+Material+NgRx · [x] core/models/index.ts · [x] app.routes.ts · [x] utils.ts |
 
-## Phase 02 — Auth
-| Backend | [ ] AppUser entity · [ ] BlinkitDbContext · [ ] JwtTokenService · [ ] AuthController (register/login/refresh/logout) |
-| Angular | [ ] AuthStore · [ ] AuthService · [ ] AuthInterceptor · [ ] AuthGuard · [ ] NavbarComponent · [ ] LoginComponent · [ ] RegisterComponent |
+## Phase 02 — Auth ✓ COMPLETE
+| Backend | [x] AppUser entity · [x] BlinkitDbContext · [x] JwtTokenService · [x] AuthController (register/login/refresh/logout/me) · [x] InitialAuthCreate migration |
+| Angular | [x] AuthStore · [x] AuthService · [x] AuthInterceptor · [x] AuthGuard · [x] AdminGuard · [x] NavbarComponent · [x] LocationSelectorComponent · [x] FooterComponent · [x] LoginComponent · [x] RegisterComponent |
 
 ## Phase 03 — Products
 | Backend | [ ] All entities · [ ] SeedData (500+ products) · [ ] ProductsController · [ ] CategoriesController · [ ] Migration applied |

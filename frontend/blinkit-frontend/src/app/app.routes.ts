@@ -1,4 +1,6 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './core/guards/auth.guard';
+import { adminGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
   {
@@ -28,21 +30,25 @@ export const routes: Routes = [
   },
   {
     path: 'checkout',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/checkout/checkout/checkout.component').then(m => m.CheckoutComponent),
   },
   {
     path: 'checkout/confirmation',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/checkout/order-confirmation/order-confirmation.component').then(m => m.OrderConfirmationComponent),
   },
   {
     path: 'orders',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/orders/order-history/order-history.component').then(m => m.OrderHistoryComponent),
   },
   {
     path: 'orders/:id/add',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/orders/post-checkout-add/post-checkout-add.component').then(m => m.PostCheckoutAddComponent),
   },
@@ -58,11 +64,13 @@ export const routes: Routes = [
   },
   {
     path: 'account',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/account/account/account.component').then(m => m.AccountComponent),
   },
   {
     path: 'account/blinkit-plus',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/account/blinkit-plus/blinkit-plus.component').then(m => m.BlinkitPlusComponent),
   },
@@ -78,6 +86,7 @@ export const routes: Routes = [
   },
   {
     path: 'admin',
+    canActivate: [adminGuard],
     loadChildren: () =>
       import('./features/admin/admin.routes').then(m => m.ADMIN_ROUTES),
   },
