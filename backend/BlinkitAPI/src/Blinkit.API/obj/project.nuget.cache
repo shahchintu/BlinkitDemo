@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "x848fGURhQqKB42Vyq/mpeezpR+1UmTUCu4zC6mqPwBfS51JjDTLAM80NDx2RM9k3JpSY3yxNGhXPRPiIJa+6Q==",
+  "dgSpecHash": "flBBPukPzuzoqPg0USZR2/nZH+h0ZppZsoMDlW8OBnOWtZ+2Gyz/+UxBVj6Jnsg/5klNVTSK53XSlHIu/UXBQg==",
   "success": true,
   "projectFilePath": "H:\\Claude - Blinkit Project\\BlinkitDemo\\backend\\BlinkitAPI\\src\\Blinkit.API\\Blinkit.API.csproj",
   "expectedPackageFiles": [
@@ -36,6 +36,7 @@
     "C:\\Users\\Chintan.shah\\.nuget\\packages\\microsoft.extensions.apidescription.server\\6.0.5\\microsoft.extensions.apidescription.server.6.0.5.nupkg.sha512",
     "C:\\Users\\Chintan.shah\\.nuget\\packages\\microsoft.extensions.caching.abstractions\\8.0.0\\microsoft.extensions.caching.abstractions.8.0.0.nupkg.sha512",
     "C:\\Users\\Chintan.shah\\.nuget\\packages\\microsoft.extensions.caching.memory\\8.0.1\\microsoft.extensions.caching.memory.8.0.1.nupkg.sha512",
+    "C:\\Users\\Chintan.shah\\.nuget\\packages\\microsoft.extensions.caching.stackexchangeredis\\8.0.15\\microsoft.extensions.caching.stackexchangeredis.8.0.15.nupkg.sha512",
     "C:\\Users\\Chintan.shah\\.nuget\\packages\\microsoft.extensions.configuration.abstractions\\8.0.0\\microsoft.extensions.configuration.abstractions.8.0.0.nupkg.sha512",
     "C:\\Users\\Chintan.shah\\.nuget\\packages\\microsoft.extensions.dependencyinjection\\8.0.1\\microsoft.extensions.dependencyinjection.8.0.1.nupkg.sha512",
     "C:\\Users\\Chintan.shah\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\10.0.0\\microsoft.extensions.dependencyinjection.abstractions.10.0.0.nupkg.sha512",
