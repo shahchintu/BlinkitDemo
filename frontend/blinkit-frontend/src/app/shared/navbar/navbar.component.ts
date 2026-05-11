@@ -3,7 +3,9 @@ import { RouterLink } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { AuthStore } from '../../core/stores/auth.store';
 import { AuthService } from '../../core/services/auth.service';
+import { CartStore } from '../../core/stores/cart.store';
 import { LocationSelectorComponent } from '../location-selector/location-selector.component';
+import { SearchBarComponent } from '../search-bar/search-bar.component';
 
 interface UserLocation { city: string; state: string; pincode: string; }
 
@@ -11,7 +13,7 @@ interface UserLocation { city: string; state: string; pincode: string; }
   selector: 'app-navbar',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, SearchBarComponent],
   template: `
     <header class="sticky top-0 z-50 bg-white border-b border-[#E0E0E0] shadow-sm">
       <div class="flex items-center gap-3 px-4 py-3 max-w-screen-xl mx-auto">
@@ -40,14 +42,9 @@ interface UserLocation { city: string; state: string; pincode: string; }
           </svg>
         </button>
 
-        <!-- Search placeholder -->
+        <!-- Search bar -->
         <div class="flex-1 hidden md:block">
-          <div class="flex items-center bg-[#F8F8F8] border border-[#E0E0E0] rounded-xl px-4 py-2 gap-2">
-            <svg class="w-4 h-4 text-[#666666]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
-            <span class="text-sm text-[#666666]">Search for products...</span>
-          </div>
+          <app-search-bar />
         </div>
 
         <!-- Right side -->
@@ -90,15 +87,20 @@ interface UserLocation { city: string; state: string; pincode: string; }
             </div>
           }
 
-          <!-- Cart button -->
+          <!-- Cart button with badge -->
           <a
             routerLink="/cart"
-            class="flex items-center gap-2 bg-[#0C831F] text-white px-3 py-2 rounded-xl text-sm font-medium hover:bg-green-700 transition-colors"
+            class="relative flex items-center gap-2 bg-[#0C831F] text-white px-3 py-2 rounded-xl text-sm font-medium hover:bg-green-700 transition-colors min-w-[44px] min-h-[44px] justify-center"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
             </svg>
-            <span>My Cart</span>
+            <span class="hidden md:block">My Cart</span>
+            @if (cartStore.itemCount() > 0) {
+              <span class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-[#F8C200] text-black text-[10px] font-bold rounded-full flex items-center justify-center">
+                {{ cartStore.itemCount() }}
+              </span>
+            }
           </a>
         </div>
       </div>
@@ -107,6 +109,7 @@ interface UserLocation { city: string; state: string; pincode: string; }
 })
 export class NavbarComponent implements OnInit {
   readonly authStore = inject(AuthStore);
+  readonly cartStore = inject(CartStore);
   private readonly dialog = inject(MatDialog);
   private readonly authService = inject(AuthService);
 

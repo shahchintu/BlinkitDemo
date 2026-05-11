@@ -33,6 +33,13 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<BlinkitDbContext>()
 .AddDefaultTokenProviders();
 
+// Redis distributed cache
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("Redis")
+        ?? "localhost:6379";
+});
+
 // MediatR
 builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(RegisterCommandHandler).Assembly));
@@ -42,6 +49,7 @@ builder.Services.AddValidatorsFromAssembly(typeof(RegisterCommandHandler).Assemb
 
 // Services
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<IBlinkitDbContext>(sp => sp.GetRequiredService<BlinkitDbContext>());
 
 // CORS — Angular dev server
 builder.Services.AddCors(options =>
@@ -80,21 +88,29 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
 // OpenAPI + Scalar
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// Seed roles and apply migrations
+// Migrate DB + seed
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<BlinkitDbContext>();
     await db.Database.MigrateAsync();
 
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    if (!await roleManager.RoleExistsAsync("Admin"))
-        await roleManager.CreateAsync(new IdentityRole("Admin"));
-    if (!await roleManager.RoleExistsAsync("User"))
-        await roleManager.CreateAsync(new IdentityRole("User"));
+    var userManager  = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
+    var roleManager  = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+    if (!await db.Categories.IgnoreQueryFilters().AnyAsync())
+        await SeedData.SeedAsync(db, userManager, roleManager);
+    else
+    {
+        // Always ensure roles and admin user exist even if products are already seeded
+        foreach (var role in new[] { "Admin", "User" })
+            if (!await roleManager.RoleExistsAsync(role))
+                await roleManager.CreateAsync(new IdentityRole(role));
+    }
 }
 
 // Global exception handler — must be first

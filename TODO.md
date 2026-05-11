@@ -8,7 +8,7 @@ Architecture: Parallel feature-by-feature · Real APIs only · SQL Server
 
 ## Phase 00a [x]  Phase 00b [ ]  Phase 01 [x]
 ## Phase 02 [x] — Auth (backend + Angular together)
-## Phase 03 [ ] — Products (backend + Angular together)
+## Phase 03 [x] — Products (backend + Angular together)
 ## Phase 04 [ ] — Cart (backend + Angular together)
 ## Phase 05 [ ] — Checkout + Razorpay (backend + Angular together)
 ## Phase 06 [ ] — Orders + Account (backend + Angular together)
@@ -22,3 +22,4 @@ Architecture: Parallel feature-by-feature · Real APIs only · SQL Server
 | 2026-05-11 | 00a | Project docs generated | — |
 | 2026-05-11 | 01  | Infrastructure scaffolded — docker-compose, 4-project .NET sln, Angular 19 + all packages, models, routes, utils | — |
 | 2026-05-11 | 02  | Auth — .NET: AppUser/enums, BlinkitDbContext, JwtTokenService, AuthController, InitialAuthCreate migration. Angular: AuthStore, AuthService, AuthInterceptor, AuthGuard, AdminGuard, NavbarComponent, LocationSelectorComponent, FooterComponent, LoginComponent, RegisterComponent | — |
+| 2026-05-11 | 03  | Products — .NET: Category/Product/Variant/Attribute/Tag/Image/Coupon/DeliverySlot entities, SeedData (150 products × 5 categories), IBlinkitDbContext interface, MediatR query handlers with Redis cache, ProductsController/CategoriesController/DeliveryController, AddProductEntities migration. Angular: CartStore (NgRx signals), ProductService, SearchBarComponent, HeroBannerComponent, CategoryStripComponent, OffersStripComponent, BrandStoresStripComponent, FeaturedProductsComponent, HomeComponent, ProductCardComponent (ETA badge + split ADD/stepper), ProductVariantModalComponent, ProductListComponent (filter sidebar + pagination), ProductDetailComponent (gallery + variant pills + attributes + related), BrandStoreComponent | — |

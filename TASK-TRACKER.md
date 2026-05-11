@@ -8,9 +8,9 @@
 | Backend | [x] AppUser entity · [x] BlinkitDbContext · [x] JwtTokenService · [x] AuthController (register/login/refresh/logout/me) · [x] InitialAuthCreate migration |
 | Angular | [x] AuthStore · [x] AuthService · [x] AuthInterceptor · [x] AuthGuard · [x] AdminGuard · [x] NavbarComponent · [x] LocationSelectorComponent · [x] FooterComponent · [x] LoginComponent · [x] RegisterComponent |
 
-## Phase 03 — Products
-| Backend | [ ] All entities · [ ] SeedData (500+ products) · [ ] ProductsController · [ ] CategoriesController · [ ] Migration applied |
-| Angular | [ ] ProductService · [ ] CartStore · [ ] SearchBar · [ ] Home (Hero+CategoryStrip+Featured+Offers+BrandStrip) · [ ] ProductCard (ETA badge · variants) · [ ] ProductVariantModal · [ ] ProductList+FilterSidebar · [ ] ProductDetail (gallery+attributes+related) · [ ] BrandStore |
+## Phase 03 — Products ✓ COMPLETE
+| Backend | [x] All entities · [x] SeedData (150 products × 5 categories) · [x] IBlinkitDbContext + MediatR handlers · [x] ProductsController · [x] CategoriesController · [x] DeliveryController · [x] Redis cache (categories) · [x] AddProductEntities migration |
+| Angular | [x] ProductService · [x] CartStore · [x] SearchBar (debounced + dropdown) · [x] Home (Hero+CategoryStrip+Featured+Offers+BrandStrip) · [x] ProductCard (ETA badge · split ADD/stepper) · [x] ProductVariantModal · [x] ProductList+FilterSidebar+Pagination · [x] ProductDetail (gallery+thumbnails+variant pills+attributes+related) · [x] BrandStore |
 
 ## Phase 04 — Cart
 | Backend | [ ] RedisCartService · [ ] CartController · [ ] CouponsController |
