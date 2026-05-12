@@ -61,6 +61,7 @@ export interface ICategory {
   iconUrl: string;
   displayOrder: number;
   isActive: boolean;
+  productCount: number;
 }
 
 export interface ICartItem {

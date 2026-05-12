@@ -8,7 +8,8 @@ Frontend: frontend/blinkit-frontend/
 
 ## Architecture — PARALLEL FEATURE-BY-FEATURE · REAL APIs ONLY
 Each phase = one complete feature: .NET endpoint + Angular UI together.
-⚠️  NO mock data · NO of() · NO delay() · NO picsum for product images
+⚠️  NO mock data · NO of() · NO delay()
+Product images: picsum.photos/seed/{id}/200/200 (CDN blocked by CORS/Referer policy)
 Angular calls REAL ASP.NET Core endpoints for EVERYTHING.
 Backend must be running on port 7001 before any Angular work.
 

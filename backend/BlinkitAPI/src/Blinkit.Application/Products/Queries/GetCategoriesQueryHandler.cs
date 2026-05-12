@@ -10,7 +10,7 @@ namespace Blinkit.Application.Products.Queries;
 public class GetCategoriesQueryHandler(IBlinkitDbContext db, IDistributedCache cache)
     : IRequestHandler<GetCategoriesQuery, List<CategoryDto>>
 {
-    private const string CacheKey = "categories:all";
+    private const string CacheKey = "categories:all:v2";
 
     public async Task<List<CategoryDto>> Handle(GetCategoriesQuery request, CancellationToken ct)
     {
@@ -22,7 +22,8 @@ public class GetCategoriesQueryHandler(IBlinkitDbContext db, IDistributedCache c
             .Where(c => c.IsActive)
             .OrderBy(c => c.DisplayOrder)
             .AsNoTracking()
-            .Select(c => new CategoryDto(c.Id, c.Name, c.Slug, c.IconUrl, c.DisplayOrder))
+            .Select(c => new CategoryDto(c.Id, c.Name, c.Slug, c.IconUrl, c.DisplayOrder,
+                c.Products.Count(p => p.IsActive)))
             .ToListAsync(ct);
 
         var options = new DistributedCacheEntryOptions

@@ -5,5 +5,6 @@ public record CategoryDto(
     string Name,
     string Slug,
     string IconUrl,
-    int DisplayOrder
+    int DisplayOrder,
+    int ProductCount
 );

@@ -1,21 +1,25 @@
-const CDN = 'https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/images/products/full_img/';
-
 const CATEGORY_FALLBACK: Record<string, string> = {
-  'fruits-vegetables': `${CDN}154.jpg`,
-  'dairy-breakfast':   `${CDN}329.jpg`,
-  'bakery':            `${CDN}1055.jpg`,
-  'snacks':            `${CDN}1072.jpg`,
-  'beverages':         `${CDN}1178.jpg`,
-  'instant-food':      `${CDN}1228.jpg`,
-  'cleaning':          `${CDN}1421.jpg`,
-  'personal-care':     `${CDN}1511.jpg`,
-  'baby-care':         `${CDN}1654.jpg`,
-  'pet-care':          `${CDN}1821.jpg`,
-  'staples':           `${CDN}2012.jpg`,
-  'meat-seafood':      `${CDN}2111.jpg`,
-  'ice-cream':         `${CDN}2213.jpg`,
-  'pharma':            `${CDN}2315.jpg`,
-  'electronics':       `${CDN}2412.jpg`,
+  'fruits-vegetables': 'https://picsum.photos/seed/fruits/200/200',
+  'dairy-eggs':        'https://picsum.photos/seed/dairy/200/200',
+  'dairy-breakfast':   'https://picsum.photos/seed/dairy/200/200',
+  'snacks':            'https://picsum.photos/seed/snacks/200/200',
+  'beverages':         'https://picsum.photos/seed/drinks/200/200',
+  'bakery':            'https://picsum.photos/seed/bread/200/200',
+  'meat-fish':         'https://picsum.photos/seed/meat/200/200',
+  'meat-seafood':      'https://picsum.photos/seed/meat/200/200',
+  'personal-care':     'https://picsum.photos/seed/soap/200/200',
+  'household':         'https://picsum.photos/seed/clean/200/200',
+  'cleaning':          'https://picsum.photos/seed/clean/200/200',
+  'baby-care':         'https://picsum.photos/seed/baby/200/200',
+  'pet-care':          'https://picsum.photos/seed/pet/200/200',
+  'pharma':            'https://picsum.photos/seed/medicine/200/200',
+  'beauty':            'https://picsum.photos/seed/beauty/200/200',
+  'frozen-foods':      'https://picsum.photos/seed/frozen/200/200',
+  'instant-food':      'https://picsum.photos/seed/frozen/200/200',
+  'breakfast-cereals': 'https://picsum.photos/seed/cereal/200/200',
+  'staples':           'https://picsum.photos/seed/cereal/200/200',
+  'electronics':       'https://picsum.photos/seed/gadget/200/200',
+  'ice-cream':         'https://picsum.photos/seed/icecream/200/200',
 };
 
 export function formatPrice(n: number): string {
@@ -54,5 +58,5 @@ export function slugify(name: string): string {
 }
 
 export function getCategoryFallback(category: string): string {
-  return CATEGORY_FALLBACK[category] ?? `${CDN}154.jpg`;
+  return CATEGORY_FALLBACK[category] ?? 'https://picsum.photos/seed/food/200/200';
 }

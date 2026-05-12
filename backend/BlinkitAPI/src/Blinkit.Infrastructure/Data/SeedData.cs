@@ -6,9 +6,9 @@ namespace Blinkit.Infrastructure.Data;
 
 public static class SeedData
 {
-    private const string Cdn = "https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/images/products/full_img/";
+    private static string Img(string id) => $"https://picsum.photos/seed/{id}/200/200";
 
-    private static string Img(string id) => $"{Cdn}{id}.jpg";
+    private static string CatImg(string slug) => $"https://picsum.photos/seed/cat-{slug}/200/200";
 
     public static async Task SeedAsync(
         BlinkitDbContext db,
@@ -54,21 +54,21 @@ public static class SeedData
         // ── 15 Categories ─────────────────────────────────────────────────────
         var cats = new Dictionary<string, Category>
         {
-            ["fruits-vegetables"]  = Cat("Fruits & Vegetables", "fruits-vegetables",  "https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/images/category/full_img/14_2022-08-29.png",  1),
-            ["dairy-eggs"]         = Cat("Dairy & Eggs",        "dairy-eggs",          "https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/images/category/full_img/59_2022-08-29.png",  2),
-            ["snacks"]             = Cat("Snacks & Munchies",   "snacks",              "https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/images/category/full_img/18_2022-08-29.png",  3),
-            ["beverages"]          = Cat("Cold Drinks & Juices","beverages",           "https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/images/category/full_img/15_2022-08-29.png",  4),
-            ["bakery"]             = Cat("Bread & Bakery",      "bakery",              "https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/images/category/full_img/64_2022-08-29.png",  5),
-            ["meat-fish"]          = Cat("Meat, Fish & Eggs",   "meat-fish",           "https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/images/category/full_img/65_2022-08-29.png",  6),
-            ["personal-care"]      = Cat("Personal Care",       "personal-care",       "https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/images/category/full_img/9_2022-08-29.png",   7),
-            ["household"]          = Cat("Household Essentials","household",           "https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/images/category/full_img/11_2022-08-29.png",  8),
-            ["baby-care"]          = Cat("Baby Care",           "baby-care",           "https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/images/category/full_img/59_2022-09-06.png",  9),
-            ["pet-care"]           = Cat("Pet Care",            "pet-care",            "https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/images/category/full_img/60_2022-08-29.png", 10),
-            ["pharma"]             = Cat("Pharma & Wellness",   "pharma",              "https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/images/category/full_img/62_2022-08-29.png", 11),
-            ["beauty"]             = Cat("Beauty & Grooming",   "beauty",              "https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/images/category/full_img/8_2022-08-29.png",  12),
-            ["frozen-foods"]       = Cat("Frozen Food",         "frozen-foods",        "https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/images/category/full_img/66_2022-08-29.png", 13),
-            ["breakfast-cereals"]  = Cat("Breakfast & Cereals", "breakfast-cereals",   "https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/images/category/full_img/16_2022-08-29.png", 14),
-            ["electronics"]        = Cat("Electronics",         "electronics",         "https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=70,metadata=none,w=270/app/images/category/full_img/67_2022-08-29.png", 15),
+            ["fruits-vegetables"]  = Cat("Fruits & Vegetables", "fruits-vegetables",  CatImg("fruits-vegetables"),  1),
+            ["dairy-eggs"]         = Cat("Dairy & Eggs",        "dairy-eggs",          CatImg("dairy-eggs"),          2),
+            ["snacks"]             = Cat("Snacks & Munchies",   "snacks",              CatImg("snacks"),              3),
+            ["beverages"]          = Cat("Cold Drinks & Juices","beverages",           CatImg("beverages"),           4),
+            ["bakery"]             = Cat("Bread & Bakery",      "bakery",              CatImg("bakery"),              5),
+            ["meat-fish"]          = Cat("Meat, Fish & Eggs",   "meat-fish",           CatImg("meat-fish"),           6),
+            ["personal-care"]      = Cat("Personal Care",       "personal-care",       CatImg("personal-care"),       7),
+            ["household"]          = Cat("Household Essentials","household",           CatImg("household"),           8),
+            ["baby-care"]          = Cat("Baby Care",           "baby-care",           CatImg("baby-care"),           9),
+            ["pet-care"]           = Cat("Pet Care",            "pet-care",            CatImg("pet-care"),           10),
+            ["pharma"]             = Cat("Pharma & Wellness",   "pharma",              CatImg("pharma"),             11),
+            ["beauty"]             = Cat("Beauty & Grooming",   "beauty",              CatImg("beauty"),             12),
+            ["frozen-foods"]       = Cat("Frozen Food",         "frozen-foods",        CatImg("frozen-foods"),       13),
+            ["breakfast-cereals"]  = Cat("Breakfast & Cereals", "breakfast-cereals",   CatImg("breakfast-cereals"),  14),
+            ["electronics"]        = Cat("Electronics",         "electronics",         CatImg("electronics"),        15),
         };
         await db.Categories.AddRangeAsync(cats.Values);
 
