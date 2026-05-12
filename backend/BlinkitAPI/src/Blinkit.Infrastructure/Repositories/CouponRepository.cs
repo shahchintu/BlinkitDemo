@@ -7,6 +7,9 @@ namespace Blinkit.Infrastructure.Repositories;
 
 public class CouponRepository(IBlinkitDbContext db) : ICouponRepository
 {
+    public async Task<List<Domain.Entities.Coupon>> GetAllActiveAsync() =>
+        await db.Coupons.Where(c => c.IsActive).OrderBy(c => c.Code).ToListAsync();
+
     public async Task<CouponValidationResult> ValidateAsync(string code, Guid? userId, int orderCount, decimal subtotal)
     {
         var coupon = await db.Coupons
