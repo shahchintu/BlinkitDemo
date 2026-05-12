@@ -12,9 +12,9 @@
 | Backend | [x] All entities · [x] SeedData (150 products × 5 categories) · [x] IBlinkitDbContext + MediatR handlers · [x] ProductsController · [x] CategoriesController · [x] DeliveryController · [x] Redis cache (categories) · [x] AddProductEntities migration |
 | Angular | [x] ProductService · [x] CartStore · [x] SearchBar (debounced + dropdown) · [x] Home (Hero+CategoryStrip+Featured+Offers+BrandStrip) · [x] ProductCard (ETA badge · split ADD/stepper) · [x] ProductVariantModal · [x] ProductList+FilterSidebar+Pagination · [x] ProductDetail (gallery+thumbnails+variant pills+attributes+related) · [x] BrandStore |
 
-## Phase 04 — Cart
-| Backend | [ ] RedisCartService · [ ] CartController · [ ] CouponsController |
-| Angular | [ ] CartService · [ ] CouponService · [ ] CartSidebar (nudge+coupons+customers-also-bought) · [ ] CartPage (save-for-later) |
+## Phase 04 — Cart ✓ COMPLETE
+| Backend | [x] Cart/CartItem entities · [x] RedisCartService (Redis TTL + DB fallback) · [x] ICouponRepository (4 coupons) · [x] MediatR handlers (Add/Update/Remove/Clear/Get) · [x] CartController [Authorize] · [x] CouponsController · [x] AddCartEntities migration |
+| Angular | [x] CartService (BehaviorSubject + effect sync) · [x] CouponService · [x] CartSidebar (nudge+coupons+also-bought+save-for-later) · [x] CartPage (wishlist+sticky price card) · [x] ProductCard→CartService · [x] Navbar cart opens sidebar · [x] AppComponent includes CartSidebar |
 
 ## Phase 05 — Checkout + Razorpay
 | Backend | [ ] RazorpayService · [ ] PaymentsController · [ ] CreateOrderCommand · [ ] VerifyPaymentCommand · [ ] ResendEmailService · [ ] AddressesController · [ ] DeliveryController |

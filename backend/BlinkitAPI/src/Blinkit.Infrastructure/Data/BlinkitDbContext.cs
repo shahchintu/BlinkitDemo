@@ -18,6 +18,8 @@ public class BlinkitDbContext(DbContextOptions<BlinkitDbContext> options)
     public DbSet<ProductImage> ProductImages => Set<ProductImage>();
     public DbSet<Coupon> Coupons => Set<Coupon>();
     public DbSet<DeliverySlot> DeliverySlots => Set<DeliverySlot>();
+    public DbSet<Cart> Carts => Set<Cart>();
+    public DbSet<CartItem> CartItems => Set<CartItem>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -120,6 +122,34 @@ public class BlinkitDbContext(DbContextOptions<BlinkitDbContext> options)
         {
             e.HasKey(x => x.Id);
             e.Property(x => x.Label).IsRequired().HasMaxLength(100);
+        });
+
+        builder.Entity<Cart>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.UserId).IsRequired();
+            e.HasIndex(x => x.UserId).IsUnique();
+
+            e.HasMany(x => x.Items)
+             .WithOne(x => x.Cart)
+             .HasForeignKey(x => x.CartId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<CartItem>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.UnitPrice).HasPrecision(18, 2);
+
+            e.HasOne(x => x.Product)
+             .WithMany()
+             .HasForeignKey(x => x.ProductId)
+             .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasOne(x => x.Variant)
+             .WithMany()
+             .HasForeignKey(x => x.VariantId)
+             .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

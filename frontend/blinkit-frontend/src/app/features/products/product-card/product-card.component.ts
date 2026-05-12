@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, Input } from '@angular/core
 import { RouterLink } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { CartStore } from '../../../core/stores/cart.store';
+import { CartService } from '../../../core/services/cart.service';
 import { IProduct } from '../../../core/models';
 import { formatPrice, getCategoryFallback } from '../../../shared/utils';
 import { ProductVariantModalComponent } from '../product-variant-modal/product-variant-modal.component';
@@ -110,7 +111,7 @@ import { ProductVariantModalComponent } from '../product-variant-modal/product-v
               </span>
               <button
                 class="w-11 h-9 flex items-center justify-center text-[#0C831F] hover:bg-green-50 font-bold"
-                (click)="cartStore.addItem(product, product.variants[0])"
+                (click)="addSingle()"
               >+</button>
             </div>
           }
@@ -123,6 +124,7 @@ export class ProductCardComponent {
   @Input({ required: true }) product!: IProduct;
 
   readonly cartStore = inject(CartStore);
+  private readonly cartService = inject(CartService);
   private readonly dialog = inject(MatDialog);
 
   readonly fmt = formatPrice;
@@ -150,15 +152,15 @@ export class ProductCardComponent {
 
   addSingle(): void {
     if (this.product.variants[0]) {
-      this.cartStore.addItem(this.product, this.product.variants[0]);
+      this.cartService.addItem(this.product, this.product.variants[0]).subscribe();
     }
   }
 
   decrement(): void {
     const variant = this.product.variants[0];
     if (!variant) return;
-    const item = this.cartStore.cartItems().find(i => i.variantId === variant.id);
-    if (item) this.cartStore.updateQty(item.id, item.quantity - 1);
+    const storeItem = this.cartStore.cartItems().find(i => i.variantId === variant.id);
+    if (storeItem) this.cartService.updateQty(storeItem.id, storeItem.quantity - 1).subscribe();
   }
 
   onImgError(event: Event): void {

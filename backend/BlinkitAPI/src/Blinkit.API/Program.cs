@@ -4,6 +4,7 @@ using Blinkit.Application.Auth.Commands;
 using Blinkit.Application.Interfaces;
 using Blinkit.Domain.Entities;
 using Blinkit.Infrastructure.Data;
+using Blinkit.Infrastructure.Repositories;
 using Blinkit.Infrastructure.Services;
 using FluentValidation;
 using MediatR;
@@ -49,6 +50,8 @@ builder.Services.AddValidatorsFromAssembly(typeof(RegisterCommandHandler).Assemb
 
 // Services
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<IRedisCartService, RedisCartService>();
+builder.Services.AddScoped<ICouponRepository, CouponRepository>();
 builder.Services.AddScoped<IBlinkitDbContext>(sp => sp.GetRequiredService<BlinkitDbContext>());
 
 // CORS — Angular dev server
