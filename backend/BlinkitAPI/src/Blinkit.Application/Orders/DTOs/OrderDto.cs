@@ -1,5 +1,3 @@
-using Blinkit.Domain.Entities;
-
 namespace Blinkit.Application.Orders.DTOs;
 
 public class OrderDto
@@ -15,6 +13,8 @@ public class OrderDto
     public string? RazorpayOrderId { get; set; }
     public string? RazorpayPaymentId { get; set; }
     public DateTime CreatedAt { get; set; }
+    public int ItemCount { get; set; }
+    public string ItemsSummary { get; set; } = string.Empty;
     public AddressDto? Address { get; set; }
     public List<OrderItemDto> Items { get; set; } = [];
 }

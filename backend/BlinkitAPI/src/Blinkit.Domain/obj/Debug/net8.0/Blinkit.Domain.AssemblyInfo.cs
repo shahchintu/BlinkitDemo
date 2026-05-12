@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Blinkit.Domain")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+41b3b303ee5b60c8b9d5f566a53ab4b581cb3826")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1cb1ab7cd2719d89a2749c124a97282fd0f851df")]
 [assembly: System.Reflection.AssemblyProductAttribute("Blinkit.Domain")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Blinkit.Domain")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

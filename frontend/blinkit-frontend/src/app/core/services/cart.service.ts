@@ -5,8 +5,10 @@ import {
   BehaviorSubject,
   catchError,
   EMPTY,
+  forkJoin,
   map,
   Observable,
+  switchMap,
   tap,
   throwError,
 } from 'rxjs';
@@ -134,6 +136,19 @@ export class CartService {
         this.cartStore.clearCart();
       }),
       map(() => void 0),
+    );
+  }
+
+  reorderItems(items: { productId: string; variantId: string; quantity: number }[]): Observable<void> {
+    const posts = items.map(i =>
+      this.http.post<CartDto>('/api/cart/items', {
+        productId: i.productId,
+        variantId: i.variantId,
+        quantity: i.quantity,
+      })
+    );
+    return forkJoin(posts).pipe(
+      switchMap(() => this.loadCart()),
     );
   }
 

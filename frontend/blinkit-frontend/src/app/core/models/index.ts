@@ -85,9 +85,10 @@ export interface IOrderItem {
   id: string;
   orderId: string;
   productId: string;
-  product: IProduct;
+  productName: string;
+  productImageUrl: string;
   variantId: string;
-  variant: IProductVariant;
+  variantUnit: string;
   quantity: number;
   unitPrice: number;
 }
@@ -106,6 +107,9 @@ export interface IOrder {
   razorpayOrderId: string | null;
   razorpayPaymentId: string | null;
   createdAt: string;
+  itemCount: number;
+  itemsSummary: string;
+  address: IAddress | null;
   items: IOrderItem[];
 }
 
