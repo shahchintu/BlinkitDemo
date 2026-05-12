@@ -2,6 +2,7 @@ using Blinkit.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using CartEntity = Blinkit.Domain.Entities.Cart;
 using CartItemEntity = Blinkit.Domain.Entities.CartItem;
+using OrderEntity = Blinkit.Domain.Entities.Order;
 
 namespace Blinkit.Application.Interfaces;
 
@@ -15,5 +16,8 @@ public interface IBlinkitDbContext
     DbSet<DeliverySlot> DeliverySlots { get; }
     DbSet<CartEntity> Carts { get; }
     DbSet<CartItemEntity> CartItems { get; }
+    DbSet<Address> Addresses { get; }
+    DbSet<OrderEntity> Orders { get; }
+    DbSet<OrderItem> OrderItems { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

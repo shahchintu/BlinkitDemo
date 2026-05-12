@@ -128,4 +128,4 @@ blinkit-error:#F44336 · blinkit-purple:#673AB7
 - [frontend/blinkit-frontend/src/app/shared/utils.ts](frontend/blinkit-frontend/src/app/shared/utils.ts) — formatPrice, getCategoryFallback, etc.
 
 ## Current Phase
-Phase 04 — Cart | Status: Complete
+Phase 05 — Checkout + Razorpay | Status: Complete

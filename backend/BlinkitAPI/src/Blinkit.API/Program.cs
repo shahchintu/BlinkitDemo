@@ -4,8 +4,11 @@ using Blinkit.Application.Auth.Commands;
 using Blinkit.Application.Interfaces;
 using Blinkit.Domain.Entities;
 using Blinkit.Infrastructure.Data;
+using Blinkit.Infrastructure.Email;
+using Blinkit.Infrastructure.Payment;
 using Blinkit.Infrastructure.Repositories;
 using Blinkit.Infrastructure.Services;
+using Resend;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -52,7 +55,16 @@ builder.Services.AddValidatorsFromAssembly(typeof(RegisterCommandHandler).Assemb
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IRedisCartService, RedisCartService>();
 builder.Services.AddScoped<ICouponRepository, CouponRepository>();
+builder.Services.AddScoped<IRazorpayService, RazorpayService>();
+builder.Services.AddScoped<IEmailService, ResendEmailService>();
 builder.Services.AddScoped<IBlinkitDbContext>(sp => sp.GetRequiredService<BlinkitDbContext>());
+
+// Resend email
+builder.Services.AddOptions<ResendClientOptions>()
+    .Configure<IConfiguration>((opt, cfg) =>
+        opt.ApiToken = cfg["Resend:ApiKey"] ?? string.Empty);
+builder.Services.AddHttpClient<ResendClient>();
+builder.Services.AddTransient<IResend>(sp => sp.GetRequiredService<ResendClient>());
 
 // CORS — Angular dev server
 builder.Services.AddCors(options =>

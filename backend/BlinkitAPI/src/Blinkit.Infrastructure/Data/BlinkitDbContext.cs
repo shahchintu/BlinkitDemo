@@ -20,6 +20,9 @@ public class BlinkitDbContext(DbContextOptions<BlinkitDbContext> options)
     public DbSet<DeliverySlot> DeliverySlots => Set<DeliverySlot>();
     public DbSet<Cart> Carts => Set<Cart>();
     public DbSet<CartItem> CartItems => Set<CartItem>();
+    public DbSet<Address> Addresses => Set<Address>();
+    public DbSet<Order> Orders => Set<Order>();
+    public DbSet<OrderItem> OrderItems => Set<OrderItem>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -137,6 +140,57 @@ public class BlinkitDbContext(DbContextOptions<BlinkitDbContext> options)
         });
 
         builder.Entity<CartItem>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.UnitPrice).HasPrecision(18, 2);
+
+            e.HasOne(x => x.Product)
+             .WithMany()
+             .HasForeignKey(x => x.ProductId)
+             .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasOne(x => x.Variant)
+             .WithMany()
+             .HasForeignKey(x => x.VariantId)
+             .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<Address>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.UserId).IsRequired();
+            e.Property(x => x.Label).IsRequired().HasMaxLength(100);
+            e.Property(x => x.Street).IsRequired().HasMaxLength(300);
+            e.Property(x => x.City).IsRequired().HasMaxLength(100);
+            e.Property(x => x.Pincode).IsRequired().HasMaxLength(20);
+            e.Property(x => x.Lat).HasPrecision(10, 7);
+            e.Property(x => x.Lng).HasPrecision(10, 7);
+        });
+
+        builder.Entity<Order>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.UserId).IsRequired();
+            e.Property(x => x.SubTotal).HasPrecision(18, 2);
+            e.Property(x => x.DeliveryFee).HasPrecision(18, 2);
+            e.Property(x => x.CouponCode).HasMaxLength(50);
+            e.Property(x => x.CouponDiscount).HasPrecision(18, 2);
+            e.Property(x => x.TotalAmount).HasPrecision(18, 2);
+            e.Property(x => x.RazorpayOrderId).HasMaxLength(100);
+            e.Property(x => x.RazorpayPaymentId).HasMaxLength(100);
+
+            e.HasOne(x => x.Address)
+             .WithMany()
+             .HasForeignKey(x => x.AddressId)
+             .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasMany(x => x.Items)
+             .WithOne(x => x.Order)
+             .HasForeignKey(x => x.OrderId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<OrderItem>(e =>
         {
             e.HasKey(x => x.Id);
             e.Property(x => x.UnitPrice).HasPrecision(18, 2);

@@ -16,9 +16,9 @@
 | Backend | [x] Cart/CartItem entities · [x] RedisCartService (Redis TTL + DB fallback) · [x] ICouponRepository (4 coupons) · [x] MediatR handlers (Add/Update/Remove/Clear/Get) · [x] CartController [Authorize] · [x] CouponsController · [x] AddCartEntities migration |
 | Angular | [x] CartService (BehaviorSubject + effect sync) · [x] CouponService · [x] CartSidebar (nudge+coupons+also-bought+save-for-later) · [x] CartPage (wishlist+sticky price card) · [x] ProductCard→CartService · [x] Navbar cart opens sidebar · [x] AppComponent includes CartSidebar |
 
-## Phase 05 — Checkout + Razorpay
-| Backend | [ ] RazorpayService · [ ] PaymentsController · [ ] CreateOrderCommand · [ ] VerifyPaymentCommand · [ ] ResendEmailService · [ ] AddressesController · [ ] DeliveryController |
-| Angular | [ ] PaymentService · [ ] CheckoutComponent (3-step) · [ ] RazorpayPaymentComponent · [ ] OrderConfirmationComponent |
+## Phase 05 — Checkout + Razorpay ✓ COMPLETE
+| Backend | [x] Address/Order/OrderItem entities · [x] Fluent API + AddOrderEntities migration · [x] RazorpayService (CreateOrder + HMAC VerifySignature) · [x] ResendEmailService (fire-and-forget, IResend via HttpClient DI) · [x] IRazorpayService/IEmailService · [x] CreateOrderCommand (stock validate → coupon → Razorpay → DB) · [x] VerifyPaymentCommand (sig verify → stock decrement → clear cart → email) · [x] AddItemsToOrderCommand · [x] AddressesController (CRUD + set-default) · [x] PaymentsController (create-order + verify + webhook) |
+| Angular | [x] PaymentService (createOrder/verifyPayment/openRazorpay via Subject) · [x] Razorpay window type declaration · [x] CheckoutComponent (3-step custom stepper, real addresses + slots, 5 payment methods, real Razorpay modal, test helper text) · [x] OrderConfirmationComponent (SVG stroke-dash animation, email banner, post-checkout add CTA) |
 
 ## Phase 06 — Orders + Account
 | Backend | [ ] OrdersController · [ ] AddItemsToOrderCommand · [ ] BlinkitPlusController · [ ] AccountController |
