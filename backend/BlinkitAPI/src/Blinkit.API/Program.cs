@@ -100,7 +100,8 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(opts =>
+    opts.AddPolicy("AdminOnly", p => p.RequireRole("Admin")));
 
 var app = builder.Build();
 

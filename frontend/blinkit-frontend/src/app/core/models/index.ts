@@ -159,6 +159,8 @@ export interface ICoupon {
   maxDiscountAmount: number | null;
   validFor: string;
   isActive: boolean;
+  usageCount: number;
+  maxUsage: number | null;
 }
 
 export interface ICouponValidation {

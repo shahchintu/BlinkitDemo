@@ -12,6 +12,8 @@ public interface IBlinkitDbContext
     DbSet<Product> Products { get; }
     DbSet<ProductTag> ProductTags { get; }
     DbSet<ProductVariant> ProductVariants { get; }
+    DbSet<ProductAttribute> ProductAttributes { get; }
+    DbSet<ProductImage> ProductImages { get; }
     DbSet<Coupon> Coupons { get; }
     DbSet<DeliverySlot> DeliverySlots { get; }
     DbSet<CartEntity> Carts { get; }
