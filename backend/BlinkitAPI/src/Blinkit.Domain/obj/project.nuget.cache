@@ -1,12 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "LTgKK0RwVuA=",
+  "dgSpecHash": "nXAmapW3P8aHU7oDtfuqzC+6qrMPVlnBz4xnJMIzqpIYXTdCSBwzPx7Bw/+alqThapvV/bQGnLetv70MBw5afQ==",
   "success": true,
   "projectFilePath": "H:\\Claude - Blinkit Project\\BlinkitDemo\\backend\\BlinkitAPI\\src\\Blinkit.Domain\\Blinkit.Domain.csproj",
-  "expectedPackageFiles": [
-    "C:\\Users\\Chintan.shah\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.26\\microsoft.netcore.app.ref.8.0.26.nupkg.sha512",
-    "C:\\Users\\Chintan.shah\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.26\\microsoft.windowsdesktop.app.ref.8.0.26.nupkg.sha512",
-    "C:\\Users\\Chintan.shah\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.26\\microsoft.aspnetcore.app.ref.8.0.26.nupkg.sha512"
-  ],
+  "expectedPackageFiles": [],
   "logs": []
 }
