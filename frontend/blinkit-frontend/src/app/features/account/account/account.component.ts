@@ -5,8 +5,6 @@ import { HttpClient } from '@angular/common/http';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { NavbarComponent } from '../../../shared/navbar/navbar.component';
-import { FooterComponent } from '../../../shared/footer/footer.component';
 import { IAddress } from '../../../core/models';
 
 interface Profile {
@@ -23,10 +21,9 @@ type Section = 'profile' | 'addresses';
   selector: 'app-account',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NavbarComponent, FooterComponent, ReactiveFormsModule, RouterLink, MatSnackBarModule],
+  imports: [ReactiveFormsModule, RouterLink, MatSnackBarModule],
   template: `
-    <app-navbar />
-    <main class="min-h-screen bg-[#F8F8F8]">
+    <div class="min-h-screen bg-[#F8F8F8]">
       <div class="max-w-4xl mx-auto px-4 py-6 grid md:grid-cols-[240px_1fr] gap-6">
 
         <!-- Sidebar -->
@@ -207,8 +204,7 @@ type Section = 'profile' | 'addresses';
           }
         </div>
       </div>
-    </main>
-    <app-footer />
+    </div>
   `,
 })
 export class AccountComponent implements OnInit {

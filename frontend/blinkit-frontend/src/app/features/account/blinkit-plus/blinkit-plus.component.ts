@@ -4,8 +4,6 @@ import {
 import { HttpClient } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { NavbarComponent } from '../../../shared/navbar/navbar.component';
-import { FooterComponent } from '../../../shared/footer/footer.component';
 
 interface BlinkitPlusStatus {
   isActive: boolean;
@@ -16,10 +14,9 @@ interface BlinkitPlusStatus {
   selector: 'app-blinkit-plus',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NavbarComponent, FooterComponent, DatePipe, RouterLink],
+  imports: [DatePipe, RouterLink],
   template: `
-    <app-navbar />
-    <main class="min-h-screen bg-[#F8F8F8]">
+    <div class="min-h-screen bg-[#F8F8F8]">
       <div class="max-w-xl mx-auto px-4 py-8">
 
         <!-- Back link -->
@@ -77,8 +74,7 @@ interface BlinkitPlusStatus {
           </button>
         }
       </div>
-    </main>
-    <app-footer />
+    </div>
   `,
 })
 export class BlinkitPlusComponent implements OnInit {

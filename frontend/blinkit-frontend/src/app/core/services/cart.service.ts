@@ -14,7 +14,7 @@ import {
 } from 'rxjs';
 import { AuthStore } from '../stores/auth.store';
 import { CartStore } from '../stores/cart.store';
-import { IProduct, IProductVariant } from '../models';
+import { ICartItem, IProduct, IProductVariant } from '../models';
 
 export interface CartItemDto {
   id: string;
@@ -64,7 +64,7 @@ export class CartService {
     return this.http.get<CartDto>('/api/cart').pipe(
       tap(dto => {
         this.cartSubject.next(dto);
-        this.syncStoreFromDto(dto);
+        this.cartStore.setItems(this.buildStoreItemsFromDto(dto));
       }),
       map(() => void 0),
     );
@@ -86,7 +86,10 @@ export class CartService {
       .pipe(
         tap(dto => {
           this.cartSubject.next(dto);
-          this.syncQtyFromDto(dto, variant.id);
+          const serverItem = dto.items.find(i => i.variantId === variant.id);
+          if (serverItem) {
+            this.cartStore.updateItemId(variant.id, serverItem.id);
+          }
         }),
         map(() => void 0),
         catchError(err => {
@@ -111,7 +114,10 @@ export class CartService {
     return this.http
       .put<CartDto>(`/api/cart/items/${serverItemId}`, { quantity: qty })
       .pipe(
-        tap(dto => this.cartSubject.next(dto)),
+        tap(dto => {
+          this.cartSubject.next(dto);
+          this.cartStore.setItems(this.buildStoreItemsFromDto(dto));
+        }),
         map(() => void 0),
       );
   }
@@ -124,7 +130,10 @@ export class CartService {
     }
 
     return this.http.delete<CartDto>(`/api/cart/items/${serverItemId}`).pipe(
-      tap(dto => this.cartSubject.next(dto)),
+      tap(dto => {
+        this.cartSubject.next(dto);
+        this.cartStore.setItems(this.buildStoreItemsFromDto(dto));
+      }),
       map(() => void 0),
     );
   }
@@ -160,20 +169,41 @@ export class CartService {
     return this.cartSubject.value.items.find(i => i.id === serverItemId)?.variantId;
   }
 
-  private syncStoreFromDto(dto: CartDto): void {
-    dto.items.forEach(apiItem => {
-      const storeItem = this.cartStore.cartItems().find(i => i.variantId === apiItem.variantId);
-      if (storeItem) {
-        this.cartStore.updateQty(storeItem.id, apiItem.quantity);
-      }
-    });
-  }
-
-  private syncQtyFromDto(dto: CartDto, variantId: string): void {
-    const apiItem = dto.items.find(i => i.variantId === variantId);
-    if (apiItem) {
-      const storeItem = this.cartStore.cartItems().find(i => i.variantId === variantId);
-      if (storeItem) this.cartStore.updateQty(storeItem.id, apiItem.quantity);
-    }
+  private buildStoreItemsFromDto(dto: CartDto): ICartItem[] {
+    return dto.items.map(item => ({
+      id: item.id,
+      productId: item.productId,
+      product: {
+        id: item.productId,
+        categoryId: '',
+        categoryName: '',
+        name: item.productName,
+        slug: '',
+        description: '',
+        price: item.unitPrice,
+        discountPrice: null,
+        stockQty: 1,
+        unit: item.variantUnit,
+        imageUrl: item.variantImageUrl,
+        images: [item.variantImageUrl],
+        isActive: true,
+        variants: [],
+        attributes: [],
+        relatedTags: [],
+      } as IProduct,
+      variantId: item.variantId,
+      variant: {
+        id: item.variantId,
+        productId: item.productId,
+        unit: item.variantUnit,
+        price: item.unitPrice,
+        discountPrice: null,
+        stockQty: 1,
+        imageUrl: item.variantImageUrl,
+        displayOrder: 0,
+      } as IProductVariant,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+    }));
   }
 }

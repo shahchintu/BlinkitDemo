@@ -59,5 +59,13 @@ export const CartStore = signalStore(
     clearCart(): void {
       patchState(store, { cartItems: [] });
     },
+    setItems(items: ICartItem[]): void {
+      patchState(store, { cartItems: items });
+    },
+    updateItemId(variantId: string, newId: string): void {
+      patchState(store, {
+        cartItems: store.cartItems().map(i => i.variantId === variantId ? { ...i, id: newId } : i),
+      });
+    },
   }))
 );

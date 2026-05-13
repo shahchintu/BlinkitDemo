@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy, Component, inject, OnInit, signal,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { NavbarComponent } from '../../../shared/navbar/navbar.component';
 import { ProductCardComponent } from '../../products/product-card/product-card.component';
 import { OrderService } from '../../../core/services/order.service';
 import { ProductService } from '../../../core/services/product.service';
@@ -12,10 +11,9 @@ import { IProduct } from '../../../core/models';
   selector: 'app-post-checkout-add',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NavbarComponent, ProductCardComponent],
+  imports: [ProductCardComponent],
   template: `
-    <app-navbar />
-    <main class="min-h-screen bg-[#F8F8F8] pb-24">
+    <div class="min-h-screen bg-[#F8F8F8] pb-24">
       <div class="max-w-5xl mx-auto px-4 py-4">
 
         <!-- Banner -->
@@ -52,7 +50,7 @@ import { IProduct } from '../../../core/models';
           Done — View Orders
         </button>
       </div>
-    </main>
+    </div>
   `,
 })
 export class PostCheckoutAddComponent implements OnInit {

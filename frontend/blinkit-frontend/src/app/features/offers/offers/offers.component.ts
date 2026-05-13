@@ -2,8 +2,6 @@ import {
   ChangeDetectionStrategy, Component, inject, OnInit, signal,
 } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { NavbarComponent } from '../../../shared/navbar/navbar.component';
-import { FooterComponent } from '../../../shared/footer/footer.component';
 
 interface CouponDto {
   code: string;
@@ -32,10 +30,8 @@ const BANK_OFFERS: BankOffer[] = [
   selector: 'app-offers',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NavbarComponent, FooterComponent],
+  imports: [],
   template: `
-    <app-navbar />
-
     <div class="min-h-screen bg-[#F8F8F8]">
       <div class="max-w-6xl mx-auto px-4 py-8">
         <h1 class="text-2xl font-bold text-[#1A1A1A] mb-6">Offers & Coupons</h1>
@@ -117,8 +113,6 @@ const BANK_OFFERS: BankOffer[] = [
         </div>
       </div>
     </div>
-
-    <app-footer />
   `,
 })
 export class OffersComponent implements OnInit {

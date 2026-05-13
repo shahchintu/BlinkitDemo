@@ -5,8 +5,6 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
-import { NavbarComponent } from '../../../shared/navbar/navbar.component';
-import { FooterComponent } from '../../../shared/footer/footer.component';
 
 interface Faq { q: string; a: string; }
 
@@ -42,10 +40,8 @@ const FAQS: Record<string, Faq[]> = {
   selector: 'app-help',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NavbarComponent, FooterComponent, MatExpansionModule, MatTabsModule, MatIconModule, FormsModule],
+  imports: [MatExpansionModule, MatTabsModule, MatIconModule, FormsModule],
   template: `
-    <app-navbar />
-
     <div class="min-h-screen bg-[#F8F8F8]">
       <div class="max-w-4xl mx-auto px-4 py-8">
         <h1 class="text-2xl font-bold text-[#1A1A1A] mb-6">Help & Support</h1>
@@ -72,8 +68,6 @@ const FAQS: Record<string, Faq[]> = {
         </mat-tab-group>
       </div>
     </div>
-
-    <app-footer />
 
     <!-- Chat bubble -->
     <button

@@ -3,8 +3,6 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { NavbarComponent } from '../../../shared/navbar/navbar.component';
-import { FooterComponent } from '../../../shared/footer/footer.component';
 import { OrderDetailComponent } from '../order-detail/order-detail.component';
 import { OrderService } from '../../../core/services/order.service';
 import { CartService } from '../../../core/services/cart.service';
@@ -25,10 +23,9 @@ const STATUS_CHIP: Record<string, StatusChip> = {
   selector: 'app-order-history',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NavbarComponent, FooterComponent, OrderDetailComponent, MatSnackBarModule],
+  imports: [OrderDetailComponent, MatSnackBarModule],
   template: `
-    <app-navbar />
-    <main class="min-h-screen bg-[#F8F8F8]">
+    <div class="min-h-screen bg-[#F8F8F8]">
       <div class="max-w-2xl mx-auto px-4 py-6">
         <h1 class="text-2xl font-bold text-[#1A1A1A] mb-6">My Orders</h1>
 
@@ -96,8 +93,7 @@ const STATUS_CHIP: Record<string, StatusChip> = {
           }
         }
       </div>
-    </main>
-    <app-footer />
+    </div>
   `,
 })
 export class OrderHistoryComponent implements OnInit {
