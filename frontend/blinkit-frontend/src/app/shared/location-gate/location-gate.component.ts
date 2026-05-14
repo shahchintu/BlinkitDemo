@@ -1,10 +1,11 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  EventEmitter,
-  Output,
+  inject,
+  output,
   signal,
 } from '@angular/core';
+import { Router } from '@angular/router';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 
 const CITIES = [
@@ -89,7 +90,9 @@ const CITIES = [
   `,
 })
 export class LocationGateComponent {
-  @Output() readonly locationSelected = new EventEmitter<void>();
+  readonly locationSelected = output<void>();
+
+  private readonly router = inject(Router);
 
   readonly detecting = signal(false);
   readonly geoError = signal('');
@@ -110,6 +113,7 @@ export class LocationGateComponent {
     this.geoError.set('');
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        this.detecting.set(false);
         const city = this.cityFromCoords(pos.coords.latitude, pos.coords.longitude);
         this.save({ city, pincode: '' });
       },
@@ -131,8 +135,13 @@ export class LocationGateComponent {
   }
 
   private save(location: { city: string; pincode: string }): void {
-    localStorage.setItem('userLocation', JSON.stringify(location));
+    try {
+      localStorage.setItem('userLocation', JSON.stringify(location));
+    } catch {
+      // storage unavailable (private browsing quota, etc.) — proceed anyway
+    }
     this.locationSelected.emit();
+    this.router.navigate(['/']);
   }
 
   private cityFromCoords(lat: number, lng: number): string {

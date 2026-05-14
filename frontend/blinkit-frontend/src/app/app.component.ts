@@ -12,22 +12,22 @@ import { LocationGateComponent } from './shared/location-gate/location-gate.comp
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet, NavbarComponent, FooterComponent, CartSidebarComponent, LocationGateComponent],
   template: `
-    @if (showLocationGate()) {
-      <app-location-gate (locationSelected)="showLocationGate.set(false)" />
-    } @else {
-      <app-navbar />
-      <main class="min-h-screen bg-[#F8F8F8]">
-        <router-outlet />
-      </main>
-      <app-footer />
-      <app-cart-sidebar />
+    <app-navbar />
+    <main class="min-h-screen bg-[#F8F8F8]">
+      <router-outlet />
+    </main>
+    <app-footer />
+    <app-cart-sidebar />
+
+    @if (!locationSelected()) {
+      <app-location-gate (locationSelected)="locationSelected.set(true)" />
     }
   `,
 })
 export class AppComponent implements OnInit {
   private readonly authService = inject(AuthService);
 
-  readonly showLocationGate = signal(!localStorage.getItem('userLocation'));
+  readonly locationSelected = signal(!!localStorage.getItem('userLocation'));
 
   ngOnInit(): void {
     this.authService.refresh().subscribe({ error: () => {} });
