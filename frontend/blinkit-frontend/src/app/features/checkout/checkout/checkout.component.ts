@@ -6,7 +6,7 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
-import { AsyncPipe } from '@angular/common';
+
 import { Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -25,7 +25,7 @@ type PaymentMethod = 'upi' | 'card' | 'netbanking' | 'cod' | 'paylater';
   selector: 'app-checkout',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, AsyncPipe],
+  imports: [ReactiveFormsModule],
   template: `
     <div class="min-h-screen bg-blinkit-bg py-6 px-4">
       <div class="max-w-2xl mx-auto">
@@ -202,115 +202,113 @@ type PaymentMethod = 'upi' | 'card' | 'netbanking' | 'cod' | 'paylater';
 
         <!-- ─── STEP 3: Summary + Payment ─── -->
         @if (currentStep() === 3) {
-          @if (cart$ | async; as cart) {
-            <div class="space-y-4">
+          <div class="space-y-4">
 
-              <!-- Order summary -->
-              <div class="bg-white rounded-2xl border border-blinkit-border p-5">
-                <h2 class="text-base font-bold text-gray-800 mb-3">Order Summary</h2>
-                <div class="divide-y divide-blinkit-border">
-                  @for (item of cart.items; track item.id) {
-                    <div class="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                      <div class="flex-1">
-                        <p class="text-sm font-medium text-gray-800">{{ item.productName }}</p>
-                        <p class="text-xs text-blinkit-muted">{{ item.variantUnit }} × {{ item.quantity }}</p>
-                      </div>
-                      <p class="text-sm font-bold text-blinkit-green">{{ fmt(item.unitPrice * item.quantity) }}</p>
+            <!-- Order summary -->
+            <div class="bg-white rounded-2xl border border-blinkit-border p-5">
+              <h2 class="text-base font-bold text-gray-800 mb-3">Order Summary</h2>
+              <div class="divide-y divide-blinkit-border">
+                @for (item of cartStore.cartItems(); track item.id) {
+                  <div class="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                    <div class="flex-1">
+                      <p class="text-sm font-medium text-gray-800">{{ item.product.name }}</p>
+                      <p class="text-xs text-blinkit-muted">{{ item.variant.unit }} × {{ item.quantity }}</p>
                     </div>
-                  }
-                </div>
-
-                <!-- Price breakdown -->
-                <div class="mt-3 pt-3 border-t border-blinkit-border space-y-1.5 text-sm">
-                  <div class="flex justify-between text-gray-600">
-                    <span>Subtotal ({{ cart.itemCount }} items)</span>
-                    <span>{{ fmt(cart.subTotal) }}</span>
-                  </div>
-                  <div class="flex justify-between text-gray-600">
-                    <span>Delivery fee</span>
-                    @if (cart.subTotal >= 199) {
-                      <span class="text-blinkit-success font-semibold">FREE</span>
-                    } @else {
-                      <span>{{ fmt(29) }}</span>
-                    }
-                  </div>
-                  <div class="flex justify-between font-bold text-gray-800 pt-2 border-t border-blinkit-border">
-                    <span>Total</span>
-                    <span>{{ fmt(orderTotal(cart.subTotal)) }}</span>
-                  </div>
-                  <p class="text-[10px] text-blinkit-muted">(Inclusive of all taxes)</p>
-                </div>
-              </div>
-
-              <!-- Selected address + slot recap -->
-              <div class="bg-white rounded-2xl border border-blinkit-border p-4 text-sm space-y-1.5">
-                @if (selectedAddress(); as addr) {
-                  <div class="flex items-center gap-2">
-                    <svg class="w-4 h-4 text-blinkit-green flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                    </svg>
-                    <span class="text-gray-700">{{ addr.street }}, {{ addr.city }} — {{ addr.pincode }}</span>
-                  </div>
-                }
-                @if (selectedSlot(); as slot) {
-                  <div class="flex items-center gap-2">
-                    <svg class="w-4 h-4 text-blinkit-green flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    <span class="text-gray-700">{{ slot.label }} ({{ slot.startTime }}–{{ slot.endTime }})</span>
+                    <p class="text-sm font-bold text-blinkit-green">{{ fmt(item.unitPrice * item.quantity) }}</p>
                   </div>
                 }
               </div>
 
-              <!-- Payment method -->
-              <div class="bg-white rounded-2xl border border-blinkit-border p-5">
-                <h2 class="text-base font-bold text-gray-800 mb-3">Payment Method</h2>
-                <div class="space-y-2">
-                  @for (method of paymentMethods; track method.id) {
-                    <label
-                      class="flex items-center gap-3 border-2 rounded-xl p-3 cursor-pointer transition-colors"
-                      [class]="selectedPayment() === method.id
-                        ? 'border-blinkit-green bg-green-50'
-                        : 'border-blinkit-border'"
-                    >
-                      <input type="radio" name="payment"
-                        class="accent-blinkit-green"
-                        [value]="method.id"
-                        [checked]="selectedPayment() === method.id"
-                        (change)="selectedPayment.set(method.id)" />
-                      <div class="flex items-center gap-2 flex-1">
-                        <span class="text-lg">{{ method.icon }}</span>
-                        <div>
-                          <p class="text-sm font-semibold text-gray-800">{{ method.label }}</p>
-                          <p class="text-xs text-blinkit-muted">{{ method.subtitle }}</p>
-                        </div>
-                      </div>
-                    </label>
+              <!-- Price breakdown -->
+              <div class="mt-3 pt-3 border-t border-blinkit-border space-y-1.5 text-sm">
+                <div class="flex justify-between text-gray-600">
+                  <span>Subtotal ({{ cartStore.itemCount() }} items)</span>
+                  <span>{{ fmt(cartStore.total()) }}</span>
+                </div>
+                <div class="flex justify-between text-gray-600">
+                  <span>Delivery fee</span>
+                  @if (cartStore.total() >= 199) {
+                    <span class="text-blinkit-success font-semibold">FREE</span>
+                  } @else {
+                    <span>{{ fmt(29) }}</span>
                   }
                 </div>
-              </div>
-
-              <!-- Pay button -->
-              <div class="space-y-2">
-                <button
-                  class="w-full bg-blinkit-green text-white py-4 rounded-xl text-lg font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors"
-                  [disabled]="paying()"
-                  (click)="pay(cart.subTotal)"
-                >
-                  {{ paying() ? 'Processing...' : 'Pay ' + fmt(orderTotal(cart.subTotal)) }}
-                </button>
-                <div class="text-center space-y-0.5">
-                  <p class="text-xs text-blinkit-muted">💳 Test card: 4111 1111 1111 1111 · Any future expiry · CVV: any 3 digits</p>
-                  <p class="text-xs text-blinkit-muted">📱 Test UPI: success&#64;razorpay</p>
+                <div class="flex justify-between font-bold text-gray-800 pt-2 border-t border-blinkit-border">
+                  <span>Total</span>
+                  <span>{{ fmt(orderTotal(cartStore.total())) }}</span>
                 </div>
+                <p class="text-[10px] text-blinkit-muted">(Inclusive of all taxes)</p>
               </div>
-
-              <button
-                class="w-full border-2 border-blinkit-border text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-50 transition-colors"
-                (click)="currentStep.set(2)"
-              >← Back</button>
             </div>
-          }
+
+            <!-- Selected address + slot recap -->
+            <div class="bg-white rounded-2xl border border-blinkit-border p-4 text-sm space-y-1.5">
+              @if (selectedAddress(); as addr) {
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-blinkit-green flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                  </svg>
+                  <span class="text-gray-700">{{ addr.street }}, {{ addr.city }} — {{ addr.pincode }}</span>
+                </div>
+              }
+              @if (selectedSlot(); as slot) {
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-blinkit-green flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  <span class="text-gray-700">{{ slot.label }} ({{ slot.startTime }}–{{ slot.endTime }})</span>
+                </div>
+              }
+            </div>
+
+            <!-- Payment method -->
+            <div class="bg-white rounded-2xl border border-blinkit-border p-5">
+              <h2 class="text-base font-bold text-gray-800 mb-3">Payment Method</h2>
+              <div class="space-y-2">
+                @for (method of paymentMethods; track method.id) {
+                  <label
+                    class="flex items-center gap-3 border-2 rounded-xl p-3 cursor-pointer transition-colors"
+                    [class]="selectedPayment() === method.id
+                      ? 'border-blinkit-green bg-green-50'
+                      : 'border-blinkit-border'"
+                  >
+                    <input type="radio" name="payment"
+                      class="accent-blinkit-green"
+                      [value]="method.id"
+                      [checked]="selectedPayment() === method.id"
+                      (change)="selectedPayment.set(method.id)" />
+                    <div class="flex items-center gap-2 flex-1">
+                      <span class="text-lg">{{ method.icon }}</span>
+                      <div>
+                        <p class="text-sm font-semibold text-gray-800">{{ method.label }}</p>
+                        <p class="text-xs text-blinkit-muted">{{ method.subtitle }}</p>
+                      </div>
+                    </div>
+                  </label>
+                }
+              </div>
+            </div>
+
+            <!-- Pay button -->
+            <div class="space-y-2">
+              <button
+                class="w-full bg-blinkit-green text-white py-4 rounded-xl text-lg font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors"
+                [disabled]="paying()"
+                (click)="pay()"
+              >
+                {{ paying() ? 'Processing...' : 'Pay ' + fmt(orderTotal(cartStore.total())) }}
+              </button>
+              <div class="text-center space-y-0.5">
+                <p class="text-xs text-blinkit-muted">💳 Test card: 4111 1111 1111 1111 · Any future expiry · CVV: any 3 digits</p>
+                <p class="text-xs text-blinkit-muted">📱 Test UPI: success&#64;razorpay</p>
+              </div>
+            </div>
+
+            <button
+              class="w-full border-2 border-blinkit-border text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-50 transition-colors"
+              (click)="currentStep.set(2)"
+            >← Back</button>
+          </div>
         }
 
       </div>
@@ -327,7 +325,6 @@ export class CheckoutComponent implements OnInit {
   private readonly authStore = inject(AuthStore);
   private readonly paymentService = inject(PaymentService);
 
-  readonly cart$ = this.cartService.cart$;
   readonly fmt = formatPrice;
 
   readonly currentStep = signal<number>(1);
@@ -434,7 +431,8 @@ export class CheckoutComponent implements OnInit {
     });
   }
 
-  pay(subTotal: number): void {
+  pay(): void {
+    const subTotal = this.cartStore.total();
     const addressId = this.selectedAddressId();
     const slotId = this.selectedSlotId();
     if (!addressId) return;

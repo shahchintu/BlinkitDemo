@@ -9,8 +9,11 @@ import { AsyncPipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { MatDialog } from '@angular/material/dialog';
 import { CartService, CartItemDto } from '../../../core/services/cart.service';
+import { AuthStore } from '../../../core/stores/auth.store';
 import { CouponService } from '../../../core/services/coupon.service';
+import { LoginPromptDialogComponent } from '../../../shared/login-prompt-dialog/login-prompt-dialog.component';
 import { ICouponValidation } from '../../../core/models';
 import { formatPrice, getCategoryFallback } from '../../../shared/utils';
 
@@ -232,7 +235,9 @@ import { formatPrice, getCategoryFallback } from '../../../shared/utils';
 })
 export class CartPageComponent implements OnInit {
   readonly cartService = inject(CartService);
+  private readonly authStore = inject(AuthStore);
   private readonly couponService = inject(CouponService);
+  private readonly dialog = inject(MatDialog);
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
 
@@ -318,6 +323,10 @@ export class CartPageComponent implements OnInit {
   }
 
   proceedToCheckout(): void {
+    if (!this.authStore.isAuthenticated()) {
+      this.dialog.open(LoginPromptDialogComponent, { panelClass: 'rounded-2xl', width: '380px' });
+      return;
+    }
     this.router.navigate(['/checkout']);
   }
 

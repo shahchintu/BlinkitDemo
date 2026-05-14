@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { catchError, finalize, Observable, switchMap, tap, throwError } from 'rxjs';
+import { catchError, finalize, Observable, of, switchMap, tap, timeout } from 'rxjs';
 import { IAuthResponse, ILoginRequest, IRegisterRequest, IUser } from '../models';
 import { AuthStore } from '../stores/auth.store';
 
@@ -24,18 +24,20 @@ export class AuthService {
 
   refresh(): Observable<void> {
     return this.http.post<IAuthResponse>('/api/auth/refresh', {}, { withCredentials: true }).pipe(
+      timeout(5000),
       tap(res => this.authStore.setAuth(res.user, res.accessToken)),
       switchMap(() => new Observable<void>(obs => { obs.next(); obs.complete(); })),
-      catchError(err => {
+      catchError(() => {
         this.authStore.clearAuth();
-        this.router.navigate(['/auth/login']);
-        return throwError(() => err);
+        return of(void 0);
       })
     );
   }
 
   logout(): Observable<void> {
     return this.http.post<void>('/api/auth/logout', {}, { withCredentials: true }).pipe(
+      timeout(3000),
+      catchError(() => of(void 0)),
       finalize(() => {
         this.authStore.clearAuth();
         this.router.navigate(['/']);

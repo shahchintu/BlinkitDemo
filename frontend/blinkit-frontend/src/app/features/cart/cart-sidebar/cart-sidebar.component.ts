@@ -9,10 +9,13 @@ import { AsyncPipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { tap } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
 import { CartService } from '../../../core/services/cart.service';
 import { CartStore } from '../../../core/stores/cart.store';
+import { AuthStore } from '../../../core/stores/auth.store';
 import { CouponService } from '../../../core/services/coupon.service';
 import { ProductService } from '../../../core/services/product.service';
+import { LoginPromptDialogComponent } from '../../../shared/login-prompt-dialog/login-prompt-dialog.component';
 import { ICartItem, ICouponValidation, IProduct } from '../../../core/models';
 import { formatPrice, getCategoryFallback } from '../../../shared/utils';
 
@@ -241,7 +244,9 @@ import { formatPrice, getCategoryFallback } from '../../../shared/utils';
 export class CartSidebarComponent implements OnInit {
   readonly cartService = inject(CartService);
   readonly cartStore = inject(CartStore);
+  private readonly authStore = inject(AuthStore);
   readonly router = inject(Router);
+  private readonly dialog = inject(MatDialog);
   private readonly couponService = inject(CouponService);
   private readonly productService = inject(ProductService);
 
@@ -322,6 +327,10 @@ export class CartSidebarComponent implements OnInit {
 
   proceedToCheckout(): void {
     this.cartService.closeCart();
+    if (!this.authStore.isAuthenticated()) {
+      this.dialog.open(LoginPromptDialogComponent, { panelClass: 'rounded-2xl', width: '380px' });
+      return;
+    }
     this.router.navigate(['/checkout']);
   }
 

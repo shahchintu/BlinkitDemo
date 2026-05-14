@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Blinkit.Domain")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f8bb04d88c38846549b8f0b727a6c22f6faccb14")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+70071d1e04f34ba4e012f0e37f4802ae96f774ca")]
 [assembly: System.Reflection.AssemblyProductAttribute("Blinkit.Domain")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Blinkit.Domain")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

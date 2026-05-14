@@ -30,6 +30,6 @@ export class AppComponent implements OnInit {
   readonly locationSelected = signal(!!localStorage.getItem('userLocation'));
 
   ngOnInit(): void {
-    this.authService.refresh().subscribe({ error: () => {} });
+    this.authService.refresh().subscribe();
   }
 }

@@ -4,10 +4,10 @@ import { Router } from '@angular/router';
 import {
   BehaviorSubject,
   catchError,
-  EMPTY,
   forkJoin,
   map,
   Observable,
+  of,
   switchMap,
   tap,
   throwError,
@@ -49,10 +49,11 @@ export class CartService {
   constructor() {
     effect(() => {
       if (this.authStore.isAuthenticated()) {
-        this.loadCart().subscribe();
+        this.mergeGuestCartAfterLogin().subscribe();
       } else {
-        this.cartSubject.next({ items: [], subTotal: 0, itemCount: 0 });
-        this.cartStore.clearCart();
+        const guestItems = this.readGuestItems();
+        this.cartStore.setItems(guestItems);
+        this.cartSubject.next(this.guestItemsToCartDto(guestItems));
       }
     });
   }
@@ -72,9 +73,10 @@ export class CartService {
 
   addItem(product: IProduct, variant: IProductVariant): Observable<void> {
     if (!this.authStore.isAuthenticated()) {
-      this.router.navigate(['/auth/login']);
-      return EMPTY;
+      this.addGuestItem(product, variant);
+      return of(void 0);
     }
+
     this.cartStore.addItem(product, variant);
 
     return this.http
@@ -101,6 +103,15 @@ export class CartService {
   }
 
   updateQty(serverItemId: string, qty: number): Observable<void> {
+    if (!this.authStore.isAuthenticated()) {
+      const items = this.readGuestItems();
+      const updated = qty <= 0
+        ? items.filter(i => i.id !== serverItemId)
+        : items.map(i => i.id === serverItemId ? { ...i, quantity: qty } : i);
+      this.syncGuest(updated);
+      return of(void 0);
+    }
+
     const variantId = this.getVariantId(serverItemId);
     if (variantId) {
       const storeItem = this.cartStore.cartItems().find(i => i.variantId === variantId);
@@ -123,6 +134,12 @@ export class CartService {
   }
 
   removeItem(serverItemId: string): Observable<void> {
+    if (!this.authStore.isAuthenticated()) {
+      const items = this.readGuestItems().filter(i => i.id !== serverItemId);
+      this.syncGuest(items);
+      return of(void 0);
+    }
+
     const variantId = this.getVariantId(serverItemId);
     if (variantId) {
       const storeItem = this.cartStore.cartItems().find(i => i.variantId === variantId);
@@ -163,6 +180,85 @@ export class CartService {
 
   deliveryFee(subtotal: number): number {
     return subtotal >= 199 ? 0 : 29;
+  }
+
+  mergeGuestCartAfterLogin(): Observable<void> {
+    let guestItems: ICartItem[];
+    try {
+      guestItems = JSON.parse(localStorage.getItem('guestCart') ?? '[]');
+      localStorage.removeItem('guestCart');
+    } catch {
+      guestItems = [];
+    }
+
+    if (guestItems.length === 0) {
+      return this.loadCart();
+    }
+
+    const posts = guestItems.map(item =>
+      this.http.post<CartDto>('/api/cart/items', {
+        productId: item.productId,
+        variantId: item.variantId,
+        quantity: item.quantity,
+      }).pipe(catchError(() => of(null as CartDto | null)))
+    );
+
+    return forkJoin(posts).pipe(
+      switchMap(() => this.loadCart()),
+      map(() => void 0),
+    );
+  }
+
+  private addGuestItem(product: IProduct, variant: IProductVariant): void {
+    const items = this.readGuestItems();
+    const existing = items.find(i => i.variantId === variant.id);
+    if (existing) {
+      existing.quantity += 1;
+    } else {
+      items.push({
+        id: `guest-${variant.id}`,
+        productId: product.id,
+        product,
+        variantId: variant.id,
+        variant,
+        quantity: 1,
+        unitPrice: variant.discountPrice ?? variant.price,
+      });
+    }
+    this.syncGuest(items);
+  }
+
+  private readGuestItems(): ICartItem[] {
+    try {
+      return JSON.parse(localStorage.getItem('guestCart') ?? '[]');
+    } catch {
+      return [];
+    }
+  }
+
+  private syncGuest(items: ICartItem[]): void {
+    try {
+      localStorage.setItem('guestCart', JSON.stringify(items));
+    } catch { }
+    this.cartStore.setItems(items);
+    this.cartSubject.next(this.guestItemsToCartDto(items));
+  }
+
+  private guestItemsToCartDto(items: ICartItem[]): CartDto {
+    return {
+      items: items.map(i => ({
+        id: i.id,
+        productId: i.productId,
+        productName: i.product.name,
+        variantId: i.variantId,
+        variantUnit: i.variant.unit,
+        variantImageUrl: i.variant.imageUrl,
+        quantity: i.quantity,
+        unitPrice: i.unitPrice,
+      })),
+      subTotal: items.reduce((s, i) => s + i.unitPrice * i.quantity, 0),
+      itemCount: items.reduce((s, i) => s + i.quantity, 0),
+    };
   }
 
   private getVariantId(serverItemId: string): string | undefined {

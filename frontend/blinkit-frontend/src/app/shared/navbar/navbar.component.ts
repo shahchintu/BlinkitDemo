@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { AuthStore } from '../../core/stores/auth.store';
 import { AuthService } from '../../core/services/auth.service';
 import { CartStore } from '../../core/stores/cart.store';
 import { CartService } from '../../core/services/cart.service';
 import { LocationSelectorComponent } from '../location-selector/location-selector.component';
+import { LoginPromptDialogComponent } from '../login-prompt-dialog/login-prompt-dialog.component';
 import { SearchBarComponent } from '../search-bar/search-bar.component';
 
 interface UserLocation { city: string; state: string; pincode: string; }
@@ -51,12 +52,12 @@ interface UserLocation { city: string; state: string; pincode: string; }
         <!-- Right side -->
         <div class="flex items-center gap-2 ml-auto">
           @if (!authStore.isAuthenticated()) {
-            <a
-              routerLink="/auth/login"
+            <button
               class="border border-[#E0E0E0] rounded-lg px-4 py-2 text-sm font-medium hover:border-[#0C831F] hover:text-[#0C831F] transition-colors"
+              (click)="onLogin()"
             >
               Login
-            </a>
+            </button>
           } @else {
             <div class="relative">
               <button
@@ -114,6 +115,7 @@ export class NavbarComponent implements OnInit {
   readonly cartService = inject(CartService);
   private readonly dialog = inject(MatDialog);
   private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
 
   readonly dropdownOpen = signal(false);
   readonly locationLabel = signal('Select Location');
@@ -140,6 +142,14 @@ export class NavbarComponent implements OnInit {
     ref.afterClosed().subscribe((loc: UserLocation | undefined) => {
       if (loc?.city) this.locationLabel.set(loc.city);
     });
+  }
+
+  onLogin(): void {
+    if (this.cartStore.itemCount() > 0) {
+      this.dialog.open(LoginPromptDialogComponent, { panelClass: 'rounded-2xl', width: '380px' });
+    } else {
+      this.router.navigate(['/auth/login']);
+    }
   }
 
   onLogout(): void {
