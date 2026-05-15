@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
 import { AuthStore } from '../../core/stores/auth.store';
 import { AuthService } from '../../core/services/auth.service';
 import { CartStore } from '../../core/stores/cart.store';
@@ -15,95 +16,168 @@ interface UserLocation { city: string; state: string; pincode: string; }
   selector: 'app-navbar',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, SearchBarComponent],
+  imports: [RouterLink, SearchBarComponent, MatIconModule],
   template: `
-    <header class="sticky top-0 z-50 bg-white border-b border-[#E0E0E0] shadow-sm">
-      <div class="flex items-center gap-3 px-4 py-3 max-w-screen-xl mx-auto">
+    <header class="sticky top-0 z-50 bg-white border-b border-[#E0E0E0] shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
+      <div class="flex items-center gap-4 h-16 max-w-[1200px] mx-auto px-4">
 
         <!-- Logo -->
         <a routerLink="/" class="flex-shrink-0">
-          <div class="bg-[#0C831F] px-3 py-1 rounded-lg">
-            <span class="text-[#F8C200] italic font-black text-xl tracking-tight">blinkit</span>
+          <div class="bg-[#F8C200] px-3 py-1 rounded-lg">
+            <span class="text-[#0C831F] italic font-black text-2xl tracking-tight">blinkit</span>
           </div>
         </a>
 
         <!-- Location pill -->
         <button
-          class="flex items-center gap-1 text-sm font-medium border border-[#E0E0E0] rounded-lg px-3 py-2 hover:border-[#0C831F] transition-colors flex-shrink-0"
+          class="flex flex-col items-start ml-1 cursor-pointer flex-shrink-0 hover:opacity-80 transition-opacity"
           (click)="openLocationSelector()"
         >
-          <svg class="w-4 h-4 text-[#0C831F]" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-          </svg>
-          <div class="text-left">
-            <div class="text-[10px] text-[#0C831F] font-bold leading-none">Delivery in 8 minutes</div>
-            <div class="text-xs text-gray-700 leading-none">{{ locationLabel() }}</div>
+          <span class="text-[11px] font-bold text-[#1A1A1A] leading-none">Delivery in 8 minutes</span>
+          <div class="flex items-center gap-0.5 mt-0.5">
+            <span class="text-[13px] font-semibold text-[#1A1A1A] leading-none">{{ locationLabel() }}</span>
+            <svg class="w-3 h-3 text-[#1A1A1A]" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M7 10l5 5 5-5z"/>
+            </svg>
           </div>
-          <svg class="w-3 h-3 ml-1 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M7 10l5 5 5-5z"/>
-          </svg>
         </button>
 
         <!-- Search bar -->
-        <div class="flex-1 hidden md:block">
+        <div class="flex-1 max-w-[600px] mx-2 hidden md:block">
           <app-search-bar />
         </div>
 
         <!-- Right side -->
-        <div class="flex items-center gap-2 ml-auto">
+        <div class="flex items-center gap-3 ml-auto">
+
           @if (!authStore.isAuthenticated()) {
+            <!-- Not logged in -->
             <button
-              class="border border-[#E0E0E0] rounded-lg px-4 py-2 text-sm font-medium hover:border-[#0C831F] hover:text-[#0C831F] transition-colors"
+              class="border border-[#1A1A1A] rounded-[8px] px-5 h-[40px] text-[14px] font-semibold text-[#1A1A1A] hover:bg-[#F8F8F8] transition-colors"
               (click)="onLogin()"
-            >
-              Login
-            </button>
+            >Login</button>
+
           } @else {
+            <!-- Logged in: Account dropdown -->
             <div class="relative">
+
+              <!-- Click-outside overlay -->
+              @if (dropdownOpen()) {
+                <div class="fixed inset-0 z-40" (click)="dropdownOpen.set(false)"></div>
+              }
+
+              <!-- Account trigger button -->
               <button
-                class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-[#F8F8F8] transition-colors"
-                (click)="toggleDropdown()"
+                class="flex items-center gap-1 text-[#1A1A1A] font-semibold text-[15px] hover:text-[#0C831F] transition-colors py-1"
+                (click)="dropdownOpen.set(!dropdownOpen())"
               >
-                <div class="w-8 h-8 bg-[#0C831F] rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                  {{ initials() }}
-                </div>
-                <span class="text-sm font-medium hidden md:block">{{ authStore.currentUser()?.fullName }}</span>
-                <svg class="w-3 h-3 text-gray-500" fill="currentColor" viewBox="0 0 24 24">
+                Account
+                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M7 10l5 5 5-5z"/>
                 </svg>
               </button>
 
+              <!-- Dropdown panel -->
               @if (dropdownOpen()) {
-                <div class="absolute right-0 top-full mt-1 w-48 bg-white border border-[#E0E0E0] rounded-xl shadow-lg py-1 z-50">
-                  <a routerLink="/orders" class="block px-4 py-2 text-sm hover:bg-[#F8F8F8]" (click)="dropdownOpen.set(false)">My Orders</a>
-                  <a routerLink="/account" class="block px-4 py-2 text-sm hover:bg-[#F8F8F8]" (click)="dropdownOpen.set(false)">My Account</a>
+                <div class="absolute right-0 top-full mt-1 bg-white rounded-[12px] shadow-[0_8px_32px_rgba(0,0,0,0.15)] border border-[#E0E0E0] w-[300px] z-50 py-2 overflow-hidden">
+
+                  <!-- User info -->
+                  <div class="px-5 py-4 border-b border-[#F2F2F2]">
+                    <p class="text-[16px] font-bold text-[#1A1A1A]">{{ authStore.currentUser()?.fullName }}</p>
+                    <p class="text-[13px] text-[#666666] mt-0.5">{{ authStore.currentUser()?.email }}</p>
+                  </div>
+
+                  <!-- Menu items -->
+                  <a routerLink="/orders"
+                    class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] text-[14px] text-[#1A1A1A] transition-colors"
+                    (click)="dropdownOpen.set(false)">
+                    <mat-icon class="text-[20px] text-[#666666]">shopping_bag</mat-icon>
+                    My Orders
+                  </a>
+
+                  <a routerLink="/account/addresses"
+                    class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] text-[14px] text-[#1A1A1A] transition-colors"
+                    (click)="dropdownOpen.set(false)">
+                    <mat-icon class="text-[20px] text-[#666666]">location_on</mat-icon>
+                    Saved Addresses
+                  </a>
+
+                  <a routerLink="/account/blinkit-plus"
+                    class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] text-[14px] text-[#1A1A1A] transition-colors"
+                    (click)="dropdownOpen.set(false)">
+                    <mat-icon class="text-[20px] text-[#666666]">star_border</mat-icon>
+                    Blinkit Plus
+                  </a>
+
+                  <a routerLink="/help"
+                    class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] text-[14px] text-[#1A1A1A] transition-colors"
+                    (click)="dropdownOpen.set(false)">
+                    <mat-icon class="text-[20px] text-[#666666]">help_outline</mat-icon>
+                    FAQ's
+                  </a>
+
+                  <a routerLink="/account"
+                    class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] text-[14px] text-[#1A1A1A] transition-colors"
+                    (click)="dropdownOpen.set(false)">
+                    <mat-icon class="text-[20px] text-[#666666]">lock_outline</mat-icon>
+                    Account Privacy
+                  </a>
+
+                  <!-- Admin Panel — only for Admin role -->
                   @if (authStore.currentUser()?.role === 'Admin') {
-                    <a routerLink="/admin" class="block px-4 py-2 text-sm hover:bg-[#F8F8F8]" (click)="dropdownOpen.set(false)">Admin Panel</a>
+                    <div class="border-t border-[#F2F2F2] mt-1 pt-1">
+                      <button
+                        class="flex items-center gap-3 px-5 py-3 hover:bg-[#FFF8E1] text-[14px] w-full text-left transition-colors"
+                        (click)="goAdmin()">
+                        <mat-icon class="text-[20px] text-[#F57C00]">admin_panel_settings</mat-icon>
+                        <span class="font-semibold text-[#F57C00]">Admin Panel</span>
+                      </button>
+                    </div>
                   }
-                  <hr class="border-[#E0E0E0] my-1" />
-                  <button class="block w-full text-left px-4 py-2 text-sm text-[#F44336] hover:bg-[#F8F8F8]" (click)="onLogout()">
-                    Logout
-                  </button>
+
+                  <!-- Logout -->
+                  <div class="border-t border-[#F2F2F2] mt-1 pt-1">
+                    <button
+                      class="flex items-center gap-3 px-5 py-3 hover:bg-[#FFEBEE] text-[14px] text-[#F44336] w-full text-left transition-colors"
+                      (click)="onLogout()">
+                      <mat-icon class="text-[20px] text-[#F44336]">logout</mat-icon>
+                      Log Out
+                    </button>
+                  </div>
+
+                  <!-- App QR section -->
+                  <div class="px-5 py-4 border-t border-[#F2F2F2] bg-[#F8F8F8] rounded-b-[12px] flex items-center gap-3">
+                    <div class="w-12 h-12 bg-[#1A1A1A] rounded-[6px] flex items-center justify-center flex-shrink-0">
+                      <span class="text-white text-[10px] font-bold">QR</span>
+                    </div>
+                    <div>
+                      <p class="text-[12px] font-semibold text-[#1A1A1A]">Simple way to get groceries</p>
+                      <p class="text-[12px] font-semibold text-[#0C831F]">at your doorstep</p>
+                      <p class="text-[11px] text-[#666666]">Scan QR and download blinkit app</p>
+                    </div>
+                  </div>
+
                 </div>
               }
             </div>
           }
 
-          <!-- Cart button with badge -->
+          <!-- Cart button -->
           <button
-            class="relative flex items-center gap-2 bg-[#0C831F] text-white px-3 py-2 rounded-xl text-sm font-medium hover:bg-green-700 transition-colors min-w-[44px] min-h-[44px] justify-center"
+            class="relative flex items-center gap-2 bg-[#0C831F] text-white rounded-[8px] h-[44px] px-4 hover:bg-[#0a6b19] transition-colors"
             (click)="cartService.openCart()"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
             </svg>
-            <span class="hidden md:block">My Cart</span>
+            <span class="text-[14px] font-semibold hidden md:block">My Cart</span>
             @if (cartStore.itemCount() > 0) {
-              <span class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-[#F8C200] text-black text-[10px] font-bold rounded-full flex items-center justify-center">
+              <span class="absolute -top-1 -right-1 w-5 h-5 bg-[#F8C200] text-[#1A1A1A] text-[11px] font-bold rounded-full flex items-center justify-center">
                 {{ cartStore.itemCount() }}
               </span>
             }
           </button>
+
         </div>
       </div>
     </header>
@@ -128,13 +202,9 @@ export class NavbarComponent implements OnInit {
     }
   }
 
-  initials(): string {
-    const name = this.authStore.currentUser()?.fullName ?? '';
-    return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-  }
-
-  toggleDropdown(): void {
-    this.dropdownOpen.update(v => !v);
+  goAdmin(): void {
+    this.dropdownOpen.set(false);
+    this.router.navigate(['/admin']);
   }
 
   openLocationSelector(): void {

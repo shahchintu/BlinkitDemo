@@ -21,23 +21,22 @@ const CITIES = [
   template: `
     <div class="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center px-6 overflow-y-auto py-8">
 
-      <!-- Logo -->
-      <div class="flex items-center gap-2 mb-8">
-        <div class="w-10 h-10 bg-[#0C831F] rounded-xl flex items-center justify-center">
-          <span class="text-white font-black text-xl">B</span>
+      <!-- Yellow pill logo -->
+      <div class="mb-8">
+        <div class="bg-[#F8C200] px-4 py-1.5 rounded-lg">
+          <span class="text-[#0C831F] italic font-black text-3xl tracking-tight">blinkit</span>
         </div>
-        <span class="text-2xl font-black text-[#0C831F]">blinkit</span>
       </div>
 
       <!-- Heading -->
-      <h1 class="text-2xl font-bold text-[#1A1A1A] text-center">Delivery in 10 minutes</h1>
-      <p class="text-[#666666] text-center mt-2 mb-8 text-sm">
-        Select your delivery location to see products near you
+      <h1 class="text-[28px] font-bold text-[#1A1A1A] text-center">Where should we deliver?</h1>
+      <p class="text-[#666666] text-center mt-2 mb-8 text-sm max-w-[360px]">
+        Select your location to see products available in your area
       </p>
 
       <!-- Detect location -->
       <button
-        class="w-full max-w-sm bg-[#0C831F] text-white rounded-xl py-3 font-semibold flex items-center justify-center gap-2 hover:bg-green-700 transition-colors disabled:opacity-60 mb-4"
+        class="w-full max-w-[400px] bg-[#0C831F] text-white rounded-[12px] h-[52px] font-semibold flex items-center justify-center gap-2 hover:bg-[#0a6b19] transition-colors disabled:opacity-60 mb-4"
         (click)="detectLocation()"
         [disabled]="detecting()"
       >
@@ -49,39 +48,39 @@ const CITIES = [
       </button>
 
       @if (geoError()) {
-        <p class="text-[#F44336] text-xs mb-4 text-center max-w-sm">{{ geoError() }}</p>
+        <p class="text-[#F44336] text-xs mb-4 text-center max-w-[400px]">{{ geoError() }}</p>
       }
 
       <!-- Divider -->
-      <div class="flex items-center gap-3 w-full max-w-sm mb-4">
+      <div class="flex items-center gap-3 w-full max-w-[400px] mb-4">
         <div class="flex-1 h-px bg-[#E0E0E0]"></div>
-        <span class="text-[#666666] text-xs">or</span>
+        <span class="text-[#666666] text-xs">or search your area</span>
         <div class="flex-1 h-px bg-[#E0E0E0]"></div>
       </div>
 
-      <!-- Pincode input -->
-      <div class="flex gap-2 w-full max-w-sm mb-6">
+      <!-- Pincode / search input -->
+      <div class="flex gap-2 w-full max-w-[400px] mb-6">
         <input
           type="text"
           placeholder="Enter 6-digit pincode"
           maxlength="6"
           inputmode="numeric"
           [formControl]="pincodeCtrl"
-          class="flex-1 border border-[#E0E0E0] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#0C831F] transition-colors"
+          class="flex-1 border-2 border-[#E0E0E0] rounded-[12px] px-4 h-[52px] text-[16px] outline-none focus:border-[#0C831F] transition-colors"
         />
         <button
-          class="bg-[#0C831F] text-white rounded-xl px-5 py-3 text-sm font-semibold hover:bg-green-700 transition-colors disabled:opacity-50"
+          class="bg-[#0C831F] text-white rounded-[12px] px-5 h-[52px] text-sm font-semibold hover:bg-[#0a6b19] transition-colors disabled:opacity-50"
           [disabled]="pincodeCtrl.invalid"
           (click)="submitPincode()"
         >Go</button>
       </div>
 
-      <!-- City list -->
-      <p class="text-xs text-[#666666] mb-3 self-start w-full max-w-sm font-medium">Popular cities</p>
-      <div class="grid grid-cols-2 gap-2 w-full max-w-sm">
+      <!-- City pills -->
+      <p class="text-xs text-[#666666] mb-3 font-medium text-center">Popular cities</p>
+      <div class="flex flex-wrap gap-2 justify-center max-w-[500px]">
         @for (city of cities; track city) {
           <button
-            class="text-sm border border-[#E0E0E0] rounded-xl px-3 py-2.5 text-left hover:border-[#0C831F] hover:text-[#0C831F] transition-colors font-medium"
+            class="border border-[#E0E0E0] rounded-full px-4 py-2 text-[14px] cursor-pointer hover:border-[#0C831F] hover:text-[#0C831F] transition-colors font-medium"
             (click)="selectCity(city)"
           >{{ city }}</button>
         }

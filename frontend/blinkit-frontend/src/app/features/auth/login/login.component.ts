@@ -11,26 +11,26 @@ import { AuthStore } from '../../../core/stores/auth.store';
   imports: [ReactiveFormsModule, RouterLink],
   template: `
     <div class="min-h-screen bg-[#F8F8F8] flex items-center justify-center px-4">
-      <div class="bg-white rounded-2xl shadow-sm border border-[#E0E0E0] p-8 w-full max-w-md">
+      <div class="bg-white rounded-[20px] shadow-[0_8px_40px_rgba(0,0,0,0.12)] w-full max-w-[400px] p-8">
 
         <!-- Logo -->
-        <div class="flex justify-center mb-6">
-          <div class="bg-[#0C831F] px-4 py-2 rounded-xl">
-            <span class="text-[#F8C200] italic font-black text-2xl">blinkit</span>
+        <div class="flex justify-center">
+          <div class="bg-[#F8C200] px-3 py-1 rounded-lg">
+            <span class="text-[#0C831F] italic font-black text-2xl">blinkit</span>
           </div>
         </div>
 
-        <h1 class="text-2xl font-bold text-gray-900 mb-1 text-center">Welcome back</h1>
-        <p class="text-[#666666] text-sm text-center mb-6">Sign in to continue</p>
+        <h1 class="text-[22px] font-bold text-[#1A1A1A] mt-6 text-center">India's last minute app</h1>
+        <p class="text-[14px] text-[#666666] text-center mt-1">Sign in to continue</p>
 
-        <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="mt-6 space-y-4">
           <!-- Email -->
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <div>
+            <label class="block text-[13px] font-semibold text-[#1A1A1A] mb-1">Email</label>
             <input
               type="email"
               formControlName="email"
-              class="w-full border border-[#E0E0E0] rounded-xl px-4 py-3 text-sm outline-none focus:border-[#0C831F] transition-colors"
+              class="w-full border border-[#E0E0E0] rounded-[10px] px-4 h-[48px] text-[14px] outline-none focus:border-[#0C831F] focus:ring-2 focus:ring-[#0C831F]/20 transition-all"
               placeholder="you@example.com"
             />
             @if (form.get('email')?.invalid && form.get('email')?.touched) {
@@ -39,12 +39,12 @@ import { AuthStore } from '../../../core/stores/auth.store';
           </div>
 
           <!-- Password -->
-          <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <div>
+            <label class="block text-[13px] font-semibold text-[#1A1A1A] mb-1">Password</label>
             <input
               type="password"
               formControlName="password"
-              class="w-full border border-[#E0E0E0] rounded-xl px-4 py-3 text-sm outline-none focus:border-[#0C831F] transition-colors"
+              class="w-full border border-[#E0E0E0] rounded-[10px] px-4 h-[48px] text-[14px] outline-none focus:border-[#0C831F] focus:ring-2 focus:ring-[#0C831F]/20 transition-all"
               placeholder="••••••••"
             />
             @if (form.get('password')?.invalid && form.get('password')?.touched) {
@@ -54,7 +54,7 @@ import { AuthStore } from '../../../core/stores/auth.store';
 
           <!-- Error message -->
           @if (errorMessage()) {
-            <div class="mb-4 bg-red-50 border border-[#F44336] rounded-xl px-4 py-3">
+            <div class="bg-red-50 border border-[#F44336] rounded-[10px] px-4 py-3">
               <p class="text-[#F44336] text-sm">{{ errorMessage() }}</p>
             </div>
           }
@@ -63,10 +63,10 @@ import { AuthStore } from '../../../core/stores/auth.store';
           <button
             type="submit"
             [disabled]="authStore.isLoading()"
-            class="w-full bg-[#0C831F] text-white rounded-xl py-3 font-semibold text-sm hover:bg-green-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            class="w-full bg-[#0C831F] text-white h-[52px] rounded-[12px] text-[16px] font-bold hover:bg-[#0a6b19] transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6"
           >
             @if (authStore.isLoading()) {
-              <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+              <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
               </svg>
@@ -75,9 +75,9 @@ import { AuthStore } from '../../../core/stores/auth.store';
           </button>
         </form>
 
-        <p class="text-center text-sm text-[#666666] mt-4">
-          Don't have an account?
-          <a routerLink="/auth/register" class="text-[#0C831F] font-medium hover:underline">Register</a>
+        <p class="text-center text-[14px] text-[#666666] mt-4">
+          New to Blinkit?
+          <a routerLink="/auth/register" class="text-[#0C831F] font-semibold hover:underline ml-1">Create account</a>
         </p>
       </div>
     </div>

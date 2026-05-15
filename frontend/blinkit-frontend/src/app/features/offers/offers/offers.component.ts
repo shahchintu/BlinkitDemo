@@ -39,19 +39,21 @@ const BANK_OFFERS: BankOffer[] = [
         @if (loading()) {
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
             @for (_ of skeletons; track $index) {
-              <div class="h-44 bg-white rounded-xl border border-[#E0E0E0] animate-pulse"></div>
+              <div class="h-44 bg-white rounded-[20px] border border-[#E0E0E0] animate-pulse"></div>
             }
           </div>
         } @else {
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
             @for (coupon of coupons(); track coupon.code) {
-              <div class="bg-white rounded-xl border-2 border-dashed border-[#0C831F] p-5">
+              <div class="bg-white rounded-[20px] border-2 border-dashed border-[#0C831F] p-5">
                 <div class="flex items-center justify-between mb-3">
-                  <span class="bg-[#0C831F]/10 text-[#0C831F] font-mono font-bold text-sm px-3 py-1.5 rounded-lg">
+                  <span class="font-mono bg-[#F0FFF4] text-[#0C831F] font-bold px-3 py-1.5 rounded-[8px] text-[15px]">
                     {{ coupon.code }}
                   </span>
                   <button
-                    class="border border-[#0C831F] text-[#0C831F] text-xs px-3 py-1.5 rounded-lg hover:bg-[#0C831F]/5 transition-colors min-w-[90px] text-center"
+                    [class]="copiedCode() === coupon.code
+                      ? 'bg-[#0C831F] text-white border border-[#0C831F] rounded-[8px] px-4 py-2 text-[13px] font-semibold transition-colors'
+                      : 'border border-[#0C831F] text-[#0C831F] rounded-[8px] px-4 py-2 text-[13px] font-semibold hover:bg-[#0C831F]/5 transition-colors'"
                     (click)="copyCode(coupon.code)">
                     {{ copiedCode() === coupon.code ? '✓ Copied!' : 'Copy Code' }}
                   </button>
@@ -96,15 +98,15 @@ const BANK_OFFERS: BankOffer[] = [
           <h2 class="text-xl font-bold text-[#1A1A1A] mb-4">Bank & Payment Offers</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             @for (offer of bankOffers; track offer.bank) {
-              <div class="bg-white rounded-xl border border-[#E0E0E0] p-4 flex items-start gap-3">
-                <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-2xl flex-shrink-0">
+              <div class="bg-white rounded-[16px] border border-[#E0E0E0] p-4 flex items-start gap-3">
+                <div class="w-12 h-12 bg-gray-100 rounded-[12px] flex items-center justify-center text-2xl flex-shrink-0">
                   {{ offer.emoji }}
                 </div>
                 <div>
                   <p class="font-semibold text-sm text-[#1A1A1A]">{{ offer.bank }}</p>
                   <p class="text-sm text-[#666666] mb-1">{{ offer.offer }}</p>
                   @if (offer.code) {
-                    <span class="bg-[#0C831F]/10 text-[#0C831F] font-mono text-xs px-2 py-0.5 rounded">{{ offer.code }}</span>
+                    <span class="font-mono bg-[#F0FFF4] text-[#0C831F] text-xs px-2 py-0.5 rounded-[6px]">{{ offer.code }}</span>
                   }
                 </div>
               </div>

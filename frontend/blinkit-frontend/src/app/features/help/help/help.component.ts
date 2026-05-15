@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy, Component, signal,
 } from '@angular/core';
-import { MatExpansionModule } from '@angular/material/expansion';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
@@ -40,28 +39,33 @@ const FAQS: Record<string, Faq[]> = {
   selector: 'app-help',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatExpansionModule, MatTabsModule, MatIconModule, FormsModule],
+  imports: [MatTabsModule, MatIconModule, FormsModule],
   template: `
     <div class="min-h-screen bg-[#F8F8F8]">
       <div class="max-w-4xl mx-auto px-4 py-8">
         <h1 class="text-2xl font-bold text-[#1A1A1A] mb-6">Help & Support</h1>
 
-        <mat-tab-group animationDuration="200ms" class="bg-white rounded-xl shadow-sm">
+        <mat-tab-group animationDuration="200ms" class="bg-transparent">
           @for (tab of tabKeys; track tab) {
             <mat-tab [label]="tab">
-              <div class="p-4">
-                <mat-accordion>
-                  @for (faq of faqs[tab]; track faq.q) {
-                    <mat-expansion-panel class="mb-2 rounded-lg shadow-none border border-[#E0E0E0]">
-                      <mat-expansion-panel-header>
-                        <mat-panel-title class="font-medium text-sm text-[#1A1A1A]">
-                          {{ faq.q }}
-                        </mat-panel-title>
-                      </mat-expansion-panel-header>
-                      <p class="text-sm text-[#666666] leading-relaxed">{{ faq.a }}</p>
-                    </mat-expansion-panel>
-                  }
-                </mat-accordion>
+              <div class="pt-4 space-y-3">
+                @for (faq of faqs[tab]; track faq.q) {
+                  <div class="bg-white rounded-[16px] border border-[#E0E0E0] overflow-hidden">
+                    <button
+                      class="w-full px-5 py-4 font-semibold text-[15px] text-[#1A1A1A] text-left flex items-center justify-between cursor-pointer hover:bg-[#F8F8F8] transition-colors"
+                      (click)="toggleFaq(tab + faq.q)">
+                      <span>{{ faq.q }}</span>
+                      <span class="text-[#666666] text-xl leading-none ml-3 flex-shrink-0">
+                        {{ expandedFaq() === (tab + faq.q) ? '−' : '+' }}
+                      </span>
+                    </button>
+                    @if (expandedFaq() === (tab + faq.q)) {
+                      <p class="px-5 pb-4 text-[14px] text-[#666666] leading-relaxed border-t border-[#F2F2F2] pt-3">
+                        {{ faq.a }}
+                      </p>
+                    }
+                  </div>
+                }
               </div>
             </mat-tab>
           }
@@ -71,7 +75,7 @@ const FAQS: Record<string, Faq[]> = {
 
     <!-- Chat bubble -->
     <button
-      class="fixed bottom-6 right-6 z-50 bg-[#0C831F] text-white w-14 h-14 rounded-full shadow-xl flex items-center justify-center hover:bg-green-800 transition-colors"
+      class="fixed bottom-6 right-6 z-50 bg-[#0C831F] text-white w-14 h-14 rounded-full shadow-xl flex items-center justify-center hover:bg-[#0a6b19] transition-colors"
       (click)="chatOpen.set(!chatOpen())">
       <mat-icon class="text-white">{{ chatOpen() ? 'close' : 'chat' }}</mat-icon>
     </button>
@@ -104,10 +108,10 @@ const FAQS: Record<string, Faq[]> = {
           <input
             [(ngModel)]="chatInput"
             placeholder="Type a message..."
-            class="flex-1 border border-[#E0E0E0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#0C831F]"
+            class="flex-1 border border-[#E0E0E0] rounded-[10px] px-3 py-2 text-sm focus:outline-none focus:border-[#0C831F] transition-colors"
             (keyup.enter)="sendMessage()" />
           <button
-            class="bg-[#0C831F] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-800 transition-colors disabled:opacity-40"
+            class="bg-[#0C831F] text-white px-4 py-2 rounded-[10px] text-sm font-semibold hover:bg-[#0a6b19] transition-colors disabled:opacity-40"
             [disabled]="!chatInput.trim()"
             (click)="sendMessage()">
             Send
@@ -121,11 +125,16 @@ export class HelpComponent {
   readonly chatOpen = signal(false);
   readonly userMessage = signal('');
   readonly showAutoReply = signal(false);
+  readonly expandedFaq = signal<string | null>(null);
 
   chatInput = '';
 
   readonly faqs = FAQS;
   readonly tabKeys = Object.keys(FAQS);
+
+  toggleFaq(key: string): void {
+    this.expandedFaq.set(this.expandedFaq() === key ? null : key);
+  }
 
   sendMessage(): void {
     const msg = this.chatInput.trim();

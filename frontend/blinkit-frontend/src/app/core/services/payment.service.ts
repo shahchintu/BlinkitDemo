@@ -51,6 +51,9 @@ export class PaymentService {
         subject.next(response);
         subject.complete();
       },
+      modal: {
+        ondismiss: () => subject.error('cancelled'),
+      },
     });
     rzp.on('payment.failed', (err: unknown) => subject.error(err));
     rzp.open();

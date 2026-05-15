@@ -7,6 +7,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Blinkit.API.Controllers;
 
+/// <summary>
+/// Order history, post-checkout item addition, and status management.
+/// Users can only access their own orders. Status updates require AdminOnly policy.
+/// </summary>
 [ApiController]
 [Route("api/orders")]
 [Authorize]

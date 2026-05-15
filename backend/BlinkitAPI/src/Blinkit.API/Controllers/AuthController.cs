@@ -7,10 +7,19 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Blinkit.API.Controllers;
 
+/// <summary>
+/// Handles user registration, login, token refresh, and logout.
+/// Access tokens (15 min) are returned in the response body.
+/// Refresh tokens (7 days) are set as httpOnly cookies.
+/// </summary>
 [ApiController]
 [Route("api/auth")]
 public class AuthController(IMediator mediator) : ControllerBase
 {
+    /// <summary>
+    /// Register a new user. Returns 201 with access token on success,
+    /// 409 if the email is already taken.
+    /// </summary>
     [AllowAnonymous]
     [HttpPost("register")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status201Created)]
@@ -21,6 +30,7 @@ public class AuthController(IMediator mediator) : ControllerBase
         return StatusCode(StatusCodes.Status201Created, result);
     }
 
+    /// <summary>Authenticate with email/password. Sets httpOnly refreshToken cookie.</summary>
     [AllowAnonymous]
     [HttpPost("login")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
@@ -34,6 +44,7 @@ public class AuthController(IMediator mediator) : ControllerBase
         return Ok(result.Auth);
     }
 
+    /// <summary>Reissue an access token from the httpOnly refresh cookie. Rotates the refresh token.</summary>
     [AllowAnonymous]
     [HttpPost("refresh")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
@@ -51,6 +62,7 @@ public class AuthController(IMediator mediator) : ControllerBase
         return Ok(result.Auth);
     }
 
+    /// <summary>Revoke the refresh token and clear the cookie. Angular calls this with a 3-second timeout.</summary>
     [Authorize]
     [HttpPost("logout")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

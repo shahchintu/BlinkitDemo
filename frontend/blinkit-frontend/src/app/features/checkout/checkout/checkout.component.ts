@@ -9,7 +9,7 @@ import {
 
 import { Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { CartService } from '../../../core/services/cart.service';
 import { CartStore } from '../../../core/stores/cart.store';
@@ -469,21 +469,31 @@ export class CheckoutComponent implements OnInit {
                   state: { orderId: result.orderId, paymentId: rzpResponse.razorpay_payment_id },
                 });
               },
-              error: () => {
+              error: (err: unknown) => {
                 this.paying.set(false);
-                this.snackBar.open('Payment verification failed. Please contact support.', 'OK', { duration: 5000 });
+                const msg = err instanceof HttpErrorResponse
+                  ? (err.error?.message ?? 'Payment verification failed. Please contact support.')
+                  : 'Payment verification failed. Please contact support.';
+                this.snackBar.open(msg, 'OK', { duration: 5000 });
               },
             });
           },
-          error: () => {
+          error: (err: unknown) => {
             this.paying.set(false);
-            this.snackBar.open('Payment failed. Please try again.', 'OK', { duration: 4000 });
+            if (err === 'cancelled') {
+              this.snackBar.open('Payment cancelled. Please try again.', 'OK', { duration: 3000 });
+            } else {
+              this.snackBar.open('Payment failed. Please try again.', 'OK', { duration: 4000 });
+            }
           },
         });
       },
-      error: () => {
+      error: (err: unknown) => {
         this.paying.set(false);
-        this.snackBar.open('Could not create order. Please try again.', 'OK', { duration: 4000 });
+        const msg = err instanceof HttpErrorResponse
+          ? (err.error?.message ?? 'Could not create order. Please try again.')
+          : 'Could not create order. Please try again.';
+        this.snackBar.open(msg, 'OK', { duration: 4000 });
       },
     });
   }

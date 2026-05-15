@@ -5,6 +5,16 @@ import { catchError, finalize, Observable, of, switchMap, tap, timeout } from 'r
 import { IAuthResponse, ILoginRequest, IRegisterRequest, IUser } from '../models';
 import { AuthStore } from '../stores/auth.store';
 
+/**
+ * Handles all authentication API calls.
+ *
+ * Token strategy:
+ *  - Access token (15 min): stored in AuthStore memory only — never localStorage.
+ *  - Refresh token (7 days): httpOnly cookie set by the server, invisible to JS.
+ *
+ * `refresh()` is called on app init to silently rehydrate the session.
+ * Both `refresh()` and `logout()` have timeouts so a slow/dead API never hangs the UI.
+ */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);

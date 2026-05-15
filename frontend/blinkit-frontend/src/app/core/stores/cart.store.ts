@@ -3,6 +3,17 @@ import { patchState, signalStore, withComputed, withMethods, withState } from '@
 import { ICartItem, IProduct, IProductVariant } from '../models';
 import { generateId } from '../../shared/utils';
 
+/**
+ * NgRx Signal store for cart item state.
+ *
+ * This is the reactive source of truth for UI components (navbar badge,
+ * cart sidebar, checkout totals). CartService keeps it in sync with both
+ * localStorage (guest) and the server API (authenticated).
+ *
+ * `total` and `itemCount` are computed signals — they update automatically
+ * whenever cartItems changes, triggering OnPush re-renders with zero manual calls.
+ */
+
 interface CartState {
   cartItems: ICartItem[];
 }

@@ -7,7 +7,7 @@ interface Slide { bg: string; headline: string; sub: string; cta: string; ctaLin
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="relative overflow-hidden rounded-2xl mx-4 mt-4 h-40 md:h-52 lg:h-64">
+    <div class="relative overflow-hidden rounded-[16px] mx-4 mt-4 h-[180px]">
       @for (slide of slides; track $index) {
         <div
           class="absolute inset-0 flex flex-col justify-center px-8 transition-opacity duration-700"

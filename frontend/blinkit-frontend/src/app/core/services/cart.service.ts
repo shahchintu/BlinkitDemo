@@ -33,6 +33,21 @@ export interface CartDto {
   itemCount: number;
 }
 
+/**
+ * Manages cart state for both guest and authenticated users.
+ *
+ * Guest flow: items stored in `localStorage.guestCart` as full ICartItem objects.
+ *   CartStore signals and cart$ BehaviorSubject are kept in sync via syncGuest().
+ *
+ * Authenticated flow: items stored server-side (Redis → SQL Server).
+ *   Every mutating call returns the full updated CartDto from the server.
+ *
+ * On login: mergeGuestCartAfterLogin() clears localStorage atomically then
+ *   POSTs each guest item to the API, finishing with loadCart() to refresh state.
+ *
+ * The constructor effect re-runs whenever isAuthenticated() changes, handling
+ *   both the page-reload (refresh cookie) and the explicit login cases.
+ */
 @Injectable({ providedIn: 'root' })
 export class CartService {
   private readonly http = inject(HttpClient);

@@ -9,6 +9,7 @@ declare global {
   interface Window {
     Razorpay: new (options: RazorpayOptions & {
       handler: (response: RazorpaySuccessResponse) => void;
+      modal?: { ondismiss?: () => void };
     }) => RazorpayInstance;
   }
 }

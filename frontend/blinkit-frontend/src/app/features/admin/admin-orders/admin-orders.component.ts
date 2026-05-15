@@ -11,11 +11,11 @@ import { OrderDetailComponent } from '../../orders/order-detail/order-detail.com
 const ORDER_STATUSES: OrderStatus[] = ['Placed', 'Packed', 'OutForDelivery', 'Delivered', 'Cancelled'];
 
 const STATUS_CHIP: Record<string, string> = {
-  Placed: 'bg-blue-100 text-blue-700',
-  Packed: 'bg-orange-100 text-orange-700',
-  OutForDelivery: 'bg-purple-100 text-purple-700',
-  Delivered: 'bg-green-100 text-green-700',
-  Cancelled: 'bg-red-100 text-red-700',
+  Placed:         'bg-[#E3F2FD] text-[#1976D2]',
+  Packed:         'bg-[#FFF8E1] text-[#F57C00]',
+  OutForDelivery: 'bg-[#F3E5F5] text-[#7B1FA2]',
+  Delivered:      'bg-[#E8F5E9] text-[#0C831F]',
+  Cancelled:      'bg-[#FFEBEE] text-[#F44336]',
 };
 
 @Component({

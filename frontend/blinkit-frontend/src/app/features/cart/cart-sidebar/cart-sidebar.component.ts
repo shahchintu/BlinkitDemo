@@ -33,24 +33,20 @@ import { formatPrice, getCategoryFallback } from '../../../shared/utils';
       ></div>
 
       <!-- Panel -->
-      <div class="fixed top-0 right-0 h-full w-full sm:w-[400px] bg-white shadow-2xl z-50 flex flex-col">
+      <div class="fixed top-0 right-0 h-full w-full sm:w-[400px] bg-white shadow-[-8px_0_32px_rgba(0,0,0,0.12)] z-50 flex flex-col">
 
         <!-- Header -->
-        <div class="flex items-center justify-between px-4 py-3 border-b border-blinkit-border">
+        <div class="flex items-center justify-between px-4 py-4 border-b border-[#E0E0E0]">
           <div class="flex items-center gap-2">
-            <svg class="w-5 h-5 text-blinkit-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
-            </svg>
-            <h2 class="font-bold text-gray-800">My Cart</h2>
+            <h2 class="text-[18px] font-bold text-[#1A1A1A]">My Cart</h2>
             @if (cartStore.itemCount() > 0) {
-              <span class="text-xs bg-blinkit-green text-white px-2 py-0.5 rounded-full font-bold">
+              <span class="bg-[#0C831F] text-white text-[12px] font-bold px-2 py-0.5 rounded-full">
                 {{ cartStore.itemCount() }}
               </span>
             }
           </div>
           <button
-            class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+            class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#F8F8F8] transition-colors"
             (click)="cartService.closeCart()"
           >
             <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -65,67 +61,69 @@ import { formatPrice, getCategoryFallback } from '../../../shared/utils';
           @if (cartStore.cartItems().length === 0) {
             <!-- Empty state -->
             <div class="flex flex-col items-center justify-center h-64 gap-4 px-6">
-              <svg class="w-16 h-16 text-blinkit-border" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-16 h-16 text-[#E0E0E0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                   d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
               </svg>
-              <p class="text-blinkit-muted text-center">Your cart is empty</p>
+              <div class="text-center">
+                <p class="text-[18px] font-bold text-[#1A1A1A]">Your cart is empty</p>
+                <p class="text-[14px] text-[#666666] mt-1">Add items to get started</p>
+              </div>
               <button
-                class="bg-blinkit-green text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-green-700 transition-colors"
+                class="bg-[#0C831F] text-white px-6 py-2 rounded-xl text-sm font-bold hover:bg-[#0a6b19] transition-colors"
                 (click)="cartService.closeCart(); router.navigate(['/'])"
               >Start Shopping</button>
             </div>
           } @else {
-            <!-- Delivery nudge -->
-            @if (cartStore.total() < 199 && cartStore.total() > 0) {
-              <div class="px-4 py-3 bg-green-50 border-b border-blinkit-border">
-                <p class="text-xs text-gray-700 mb-1.5">
-                  Add <span class="font-bold text-blinkit-green">{{ fmt(199 - cartStore.total()) }}</span> more for FREE delivery!
+            <!-- Free delivery progress -->
+            <div class="mx-4 my-3 bg-[#F0FFF4] rounded-[12px] p-3">
+              @if (cartStore.total() < 199) {
+                <p class="text-[13px] font-semibold text-[#0C831F] mb-2">
+                  Add <span class="font-bold">{{ fmt(199 - cartStore.total()) }}</span> more for FREE delivery!
                 </p>
-                <div class="w-full bg-gray-200 rounded-full h-1.5">
+                <div class="bg-[#E8F5E9] rounded-full h-[4px]">
                   <div
-                    class="bg-blinkit-success h-1.5 rounded-full transition-all"
+                    class="bg-[#0C831F] h-[4px] rounded-full transition-all duration-500"
                     [style.width.%]="(cartStore.total() / 199) * 100"
                   ></div>
                 </div>
-              </div>
-            } @else if (cartStore.total() >= 199) {
-              <div class="px-4 py-2 bg-green-50 border-b border-blinkit-border">
-                <p class="text-xs text-blinkit-success font-semibold">✓ You've unlocked free delivery!</p>
-              </div>
-            }
+              } @else {
+                <p class="text-[13px] font-semibold text-[#0C831F]">✓ You've unlocked free delivery!</p>
+              }
+            </div>
 
             <!-- Cart items -->
-            <div class="divide-y divide-blinkit-border">
+            <div class="divide-y divide-[#F2F2F2]">
               @for (item of cartStore.cartItems(); track item.id) {
                 <div class="flex items-start gap-3 px-4 py-3">
                   <img
                     [src]="item.variant.imageUrl"
                     [alt]="item.product.name"
                     loading="lazy"
-                    class="w-14 h-14 object-contain flex-shrink-0 rounded-lg bg-gray-50"
+                    class="w-16 h-16 object-contain flex-shrink-0 rounded-[8px] bg-[#F8F8F8] p-1"
                     (error)="onImgError($event)"
                   />
                   <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-gray-800 line-clamp-1">{{ item.product.name }}</p>
-                    <p class="text-xs text-blinkit-muted mt-0.5">{{ item.variant.unit }}</p>
-                    <p class="text-sm font-bold text-blinkit-green mt-1">{{ fmt(item.unitPrice) }}</p>
+                    <p class="text-[14px] font-semibold text-[#1A1A1A] line-clamp-1">{{ item.product.name }}</p>
+                    <p class="text-[12px] text-[#666666] mt-0.5">{{ item.variant.unit }}</p>
+                    <p class="text-[14px] font-bold text-[#1A1A1A] mt-1">{{ fmt(item.unitPrice * item.quantity) }}</p>
                   </div>
-                  <div class="flex items-center gap-0.5 border-2 border-blinkit-green rounded-xl overflow-hidden flex-shrink-0">
+                  <!-- Stepper -->
+                  <div class="flex items-center bg-[#0C831F] rounded-[8px] h-[28px] flex-shrink-0">
                     <button
-                      class="w-8 h-8 flex items-center justify-center text-blinkit-green hover:bg-green-50 font-bold text-lg"
+                      class="w-8 h-[28px] flex items-center justify-center text-white font-bold text-base hover:bg-[#0a6b19] transition-colors rounded-l-[8px]"
                       (click)="decrement(item)"
                     >−</button>
-                    <span class="w-6 text-center text-sm font-bold text-blinkit-green">{{ item.quantity }}</span>
+                    <span class="w-6 text-center text-[13px] font-bold text-white">{{ item.quantity }}</span>
                     <button
-                      class="w-8 h-8 flex items-center justify-center text-blinkit-green hover:bg-green-50 font-bold text-lg"
+                      class="w-8 h-[28px] flex items-center justify-center text-white font-bold text-base hover:bg-[#0a6b19] transition-colors rounded-r-[8px]"
                       (click)="increment(item)"
                     >+</button>
                   </div>
                 </div>
                 <div class="px-4 pb-2">
                   <button
-                    class="text-xs text-blinkit-muted hover:text-blinkit-error transition-colors"
+                    class="text-xs text-[#666666] hover:text-[#F44336] transition-colors"
                     (click)="saveForLater(item)"
                   >Save for later</button>
                 </div>
@@ -133,15 +131,15 @@ import { formatPrice, getCategoryFallback } from '../../../shared/utils';
             </div>
 
             <!-- Coupon -->
-            <div class="px-4 py-3 border-t border-blinkit-border">
+            <div class="px-4 py-3 border-t border-[#E0E0E0]">
               @if (appliedCoupon()) {
-                <div class="flex items-center justify-between bg-green-50 border border-blinkit-success rounded-xl px-3 py-2">
+                <div class="flex items-center justify-between bg-green-50 border border-[#4CAF50] rounded-xl px-3 py-2">
                   <div>
-                    <span class="text-xs font-bold text-blinkit-success">{{ appliedCoupon()!.message }}</span>
+                    <span class="text-xs font-bold text-[#4CAF50]">{{ appliedCoupon()!.message }}</span>
                     <p class="text-[10px] text-gray-500">{{ couponCode().toUpperCase() }} applied</p>
                   </div>
                   <button
-                    class="text-blinkit-muted hover:text-blinkit-error ml-2"
+                    class="text-[#666666] hover:text-[#F44336] ml-2"
                     (click)="removeCoupon()"
                   >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -155,30 +153,30 @@ import { formatPrice, getCategoryFallback } from '../../../shared/utils';
                     type="text"
                     [(ngModel)]="couponCode"
                     placeholder="Coupon code"
-                    class="flex-1 border border-blinkit-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blinkit-green uppercase"
+                    class="flex-1 border border-[#E0E0E0] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#0C831F] uppercase"
                   />
                   <button
-                    class="bg-blinkit-green text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-green-700 transition-colors"
+                    class="bg-[#0C831F] text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-[#0a6b19] transition-colors disabled:opacity-50"
                     [disabled]="!couponCode()"
                     (click)="applyCoupon(cartStore.total())"
                   >Apply</button>
                 </div>
                 @if (couponError()) {
-                  <p class="text-xs text-blinkit-error mt-1">{{ couponError() }}</p>
+                  <p class="text-xs text-[#F44336] mt-1">{{ couponError() }}</p>
                 }
               }
             </div>
 
             <!-- Customers also bought -->
             @if (relatedProducts().length > 0) {
-              <div class="px-4 py-3 border-t border-blinkit-border">
-                <h3 class="text-sm font-bold text-gray-800 mb-3">You might also like</h3>
-                <div class="flex gap-3 overflow-x-auto pb-2">
+              <div class="px-4 py-3 border-t border-[#E0E0E0]">
+                <h3 class="text-sm font-bold text-[#1A1A1A] mb-3">You might also like</h3>
+                <div class="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
                   @for (rp of relatedProducts(); track rp.id) {
                     <a
                       [routerLink]="['/product', rp.id]"
                       (click)="cartService.closeCart()"
-                      class="flex-shrink-0 w-28 bg-gray-50 rounded-xl p-2 hover:shadow-md transition-shadow"
+                      class="flex-shrink-0 w-28 bg-[#F8F8F8] rounded-xl p-2 hover:shadow-md transition-shadow"
                     >
                       <img
                         [src]="rp.imageUrl"
@@ -188,7 +186,7 @@ import { formatPrice, getCategoryFallback } from '../../../shared/utils';
                         (error)="onImgError($event)"
                       />
                       <p class="text-[10px] text-gray-700 line-clamp-2 leading-tight">{{ rp.name }}</p>
-                      <p class="text-xs font-bold text-blinkit-green mt-0.5">
+                      <p class="text-xs font-bold text-[#0C831F] mt-0.5">
                         {{ fmt(rp.discountPrice ?? rp.price) }}
                       </p>
                     </a>
@@ -198,28 +196,28 @@ import { formatPrice, getCategoryFallback } from '../../../shared/utils';
             }
 
             <!-- Price summary -->
-            <div class="px-4 py-3 border-t border-blinkit-border bg-gray-50">
-              <h3 class="text-sm font-bold text-gray-800 mb-2">Price Details</h3>
-              <div class="space-y-1.5 text-sm">
-                <div class="flex justify-between text-gray-600">
+            <div class="px-4 py-3 border-t border-[#E0E0E0]">
+              <div class="space-y-1">
+                <div class="flex justify-between text-[14px] py-1 text-[#666666]">
                   <span>MRP</span>
                   <span>{{ fmt(cartStore.total()) }}</span>
                 </div>
                 @if (appliedCoupon()) {
-                  <div class="flex justify-between text-blinkit-success">
+                  <div class="flex justify-between text-[14px] py-1 text-[#0C831F]">
                     <span>Coupon discount</span>
                     <span>− {{ fmt(appliedCoupon()!.discountAmount) }}</span>
                   </div>
                 }
-                <div class="flex justify-between text-gray-600">
+                <div class="flex justify-between text-[14px] py-1 text-[#666666]">
                   <span>Delivery fee</span>
                   @if (deliveryFee(cartStore.total()) === 0) {
-                    <span class="text-blinkit-success font-semibold">FREE</span>
+                    <span class="text-[#0C831F] font-semibold">FREE</span>
                   } @else {
                     <span>{{ fmt(deliveryFee(cartStore.total())) }}</span>
                   }
                 </div>
-                <div class="flex justify-between font-bold text-gray-800 pt-1.5 border-t border-blinkit-border">
+                <div class="border-t border-dashed border-[#E0E0E0] my-2"></div>
+                <div class="flex justify-between font-bold text-[16px] py-1">
                   <span>To Pay</span>
                   <span>{{ fmt(totalToPay(cartStore.total())) }}</span>
                 </div>
@@ -230,11 +228,14 @@ import { formatPrice, getCategoryFallback } from '../../../shared/utils';
 
         <!-- Footer CTA -->
         @if (cartStore.cartItems().length > 0) {
-          <div class="p-4 border-t border-blinkit-border bg-white">
+          <div class="m-4">
             <button
-              class="w-full bg-blinkit-green text-white py-3 rounded-xl font-bold hover:bg-green-700 transition-colors"
+              class="w-full bg-[#0C831F] text-white rounded-[12px] py-4 font-bold hover:bg-[#0a6b19] transition-colors flex items-center justify-between px-4 text-[16px]"
               (click)="proceedToCheckout()"
-            >Proceed to Checkout →</button>
+            >
+              <span>Proceed to Checkout</span>
+              <span>{{ fmt(totalToPay(cartStore.total())) }} →</span>
+            </button>
           </div>
         }
       </div>

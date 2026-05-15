@@ -67,12 +67,24 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () =>
       import('./features/account/account/account.component').then(m => m.AccountComponent),
-  },
-  {
-    path: 'account/blinkit-plus',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/account/blinkit-plus/blinkit-plus.component').then(m => m.BlinkitPlusComponent),
+    children: [
+      { path: '', redirectTo: 'profile', pathMatch: 'full' },
+      {
+        path: 'profile',
+        loadComponent: () =>
+          import('./features/account/account-profile/account-profile.component').then(m => m.AccountProfileComponent),
+      },
+      {
+        path: 'addresses',
+        loadComponent: () =>
+          import('./features/account/account-addresses/account-addresses.component').then(m => m.AccountAddressesComponent),
+      },
+      {
+        path: 'blinkit-plus',
+        loadComponent: () =>
+          import('./features/account/blinkit-plus/blinkit-plus.component').then(m => m.BlinkitPlusComponent),
+      },
+    ],
   },
   {
     path: 'offers',

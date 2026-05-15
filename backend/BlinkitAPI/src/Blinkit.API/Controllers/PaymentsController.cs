@@ -7,6 +7,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Blinkit.API.Controllers;
 
+/// <summary>
+/// Handles Razorpay order creation, payment verification, and webhook events.
+/// Flow: create-order → Razorpay modal (client) → verify → stock + email (server).
+/// Webhook is AllowAnonymous but validates HMAC-SHA256 before processing.
+/// </summary>
 [ApiController, Route("api/[controller]"), Authorize]
 public sealed class PaymentsController(ISender sender, IRazorpayService razorpayService) : ControllerBase
 {
@@ -19,36 +24,66 @@ public sealed class PaymentsController(ISender sender, IRazorpayService razorpay
     [HttpPost("create-order")]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrderRequest request, CancellationToken ct)
     {
-        var command = new CreateOrderCommand(
-            UserId,
-            request.AddressId,
-            request.DeliverySlotId,
-            request.CouponCode,
-            false);
-
-        var result = await sender.Send(command, ct);
-        return Ok(new
+        try
         {
-            result.OrderId,
-            result.RazorpayOrderId,
-            result.Amount,
-            result.Currency,
-        });
+            var command = new CreateOrderCommand(
+                UserId,
+                request.AddressId,
+                request.DeliverySlotId,
+                request.CouponCode,
+                false);
+
+            var result = await sender.Send(command, ct);
+            return Ok(new
+            {
+                result.OrderId,
+                result.RazorpayOrderId,
+                result.Amount,
+                result.Currency,
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception)
+        {
+            return StatusCode(502, new { message = "Payment gateway error. Please try again." });
+        }
     }
 
     [HttpPost("verify")]
     public async Task<IActionResult> VerifyPayment([FromBody] VerifyPaymentRequest request, CancellationToken ct)
     {
-        var command = new VerifyPaymentCommand(
-            request.OrderId,
-            UserId,
-            UserEmail,
-            UserName,
-            request.RazorpayPaymentId,
-            request.RazorpaySignature);
+        try
+        {
+            var command = new VerifyPaymentCommand(
+                request.OrderId,
+                UserId,
+                UserEmail,
+                UserName,
+                request.RazorpayPaymentId,
+                request.RazorpaySignature);
 
-        await sender.Send(command, ct);
-        return Ok(new { success = true });
+            await sender.Send(command, ct);
+            return Ok(new { success = true });
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound(new { message = "Order not found" });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (ApplicationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpPost("webhook"), AllowAnonymous]

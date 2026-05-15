@@ -7,6 +7,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Blinkit.API.Controllers;
 
+/// <summary>
+/// Cart CRUD operations. All endpoints require authentication.
+/// Cart state is stored in Redis (7-day TTL) with SQL Server as fallback.
+/// Each mutating endpoint returns the full updated cart so Angular
+/// can replace its local state in a single round-trip.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]

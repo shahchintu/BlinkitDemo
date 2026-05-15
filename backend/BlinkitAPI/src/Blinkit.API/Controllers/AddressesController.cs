@@ -8,6 +8,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Blinkit.API.Controllers;
 
+/// <summary>
+/// Delivery address CRUD for the authenticated user.
+/// The first address saved is automatically set as default.
+/// Only the owning user can view, update, or delete their addresses.
+/// </summary>
 [ApiController, Route("api/[controller]"), Authorize]
 public sealed class AddressesController(IBlinkitDbContext db) : ControllerBase
 {

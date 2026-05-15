@@ -31,7 +31,7 @@ public class VerifyPaymentCommandHandler(
             .FirstOrDefaultAsync(o => o.Id == request.OrderId, cancellationToken)
             ?? throw new KeyNotFoundException("Order not found");
 
-        if (order.UserId != request.UserId)
+        if (request.UserId != Guid.Empty && order.UserId != request.UserId)
             throw new UnauthorizedAccessException("Access denied");
 
         if (order.Status != OrderStatus.Placed || order.PaymentStatus != PaymentStatus.Pending)

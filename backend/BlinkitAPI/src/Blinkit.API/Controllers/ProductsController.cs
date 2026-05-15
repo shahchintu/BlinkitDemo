@@ -4,6 +4,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Blinkit.API.Controllers;
 
+/// <summary>
+/// Public product endpoints — no authentication required.
+/// Results are cached in Redis. Search and category filter are applied server-side.
+/// </summary>
 [ApiController]
 [Route("api/products")]
 public class ProductsController(IMediator mediator) : ControllerBase

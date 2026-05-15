@@ -13,25 +13,32 @@ import { ProductVariantModalComponent } from '../product-variant-modal/product-v
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink],
   template: `
-    <div class="bg-white rounded-2xl border border-[#E0E0E0] overflow-hidden flex flex-col h-full hover:shadow-md transition-shadow">
+    <div class="bg-white rounded-[16px] border border-[#E0E0E0] overflow-hidden flex flex-col h-full hover:shadow-[0_4px_16px_rgba(0,0,0,0.12)] transition-shadow duration-200 cursor-pointer">
 
       <!-- Image area -->
-      <a [routerLink]="['/product', product.id]" class="relative block h-40 bg-gray-50 p-2">
+      <a [routerLink]="['/product', product.id]" class="relative block h-40 bg-[#F8F8F8] rounded-t-[16px]">
         <!-- ETA badge -->
-        <div class="absolute top-2 left-2 z-10 flex items-center gap-0.5 bg-[#0C831F] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md">
+        <div class="absolute top-2 left-2 z-10 flex items-center gap-0.5 bg-[#0C831F] text-white text-[10px] font-bold px-2 py-1 rounded-[6px]">
           🕐 8 MINS
         </div>
+
+        <!-- Discount badge -->
+        @if (product.discountPrice) {
+          <div class="absolute top-2 right-2 z-10 bg-[#F8C200] text-[#1A1A1A] text-[10px] font-bold px-2 py-1 rounded-[6px]">
+            {{ discount() }}% off
+          </div>
+        }
 
         <img
           [src]="product.imageUrl"
           [alt]="product.name"
           loading="lazy"
-          class="w-full h-full object-contain"
+          class="w-full h-full object-contain p-3"
           (error)="onImgError($event)"
         />
 
         @if (product.stockQty === 0) {
-          <div class="absolute inset-0 bg-white/70 flex items-center justify-center rounded-t-2xl">
+          <div class="absolute inset-0 bg-white/70 flex items-center justify-center rounded-t-[16px]">
             <span class="text-xs font-bold text-[#666666] bg-white px-2 py-1 rounded-lg border">Out of Stock</span>
           </div>
         }
@@ -39,78 +46,75 @@ import { ProductVariantModalComponent } from '../product-variant-modal/product-v
 
       <!-- Body -->
       <div class="p-3 flex flex-col flex-1">
-        <div class="text-xs text-[#666666] mb-0.5">{{ product.unit }}</div>
+        <div class="text-[12px] text-[#666666] font-medium mb-1">{{ product.unit }}</div>
         <a [routerLink]="['/product', product.id]"
-          class="text-sm font-medium text-gray-800 line-clamp-2 mb-2 flex-1 hover:text-[#0C831F] transition-colors">
+          class="text-[14px] font-semibold text-[#1A1A1A] line-clamp-2 leading-[1.3] mb-2 flex-1 hover:text-[#0C831F] transition-colors">
           {{ product.name }}
         </a>
 
         <!-- Price row -->
-        <div class="flex items-center gap-1.5 mb-2 flex-wrap">
+        <div class="flex items-center gap-2 mb-3">
           @if (product.discountPrice) {
-            <span class="text-sm font-bold text-[#0C831F]">{{ fmt(product.discountPrice) }}</span>
-            <span class="text-xs text-[#666666] line-through">{{ fmt(product.price) }}</span>
-            <span class="text-[9px] bg-[#F8C200] text-black font-bold px-1 py-0.5 rounded">
-              {{ discount() }}% off
-            </span>
+            <span class="text-[16px] font-bold text-[#1A1A1A]">{{ fmt(product.discountPrice) }}</span>
+            <span class="text-[13px] text-[#999999] line-through">{{ fmt(product.price) }}</span>
           } @else {
-            <span class="text-sm font-bold">{{ fmt(product.price) }}</span>
+            <span class="text-[16px] font-bold text-[#1A1A1A]">{{ fmt(product.price) }}</span>
           }
         </div>
 
-        <!-- ADD button -->
+        <!-- ADD button / Stepper -->
         <div class="mt-auto">
           @if (product.stockQty === 0) {
             <button disabled
-              class="w-full border-2 border-gray-200 text-gray-400 rounded-xl py-2 text-sm font-bold cursor-not-allowed">
+              class="w-full border-2 border-[#E0E0E0] text-[#999999] rounded-[8px] h-[36px] text-[14px] font-bold cursor-not-allowed">
               Out of Stock
             </button>
           } @else if (product.variants.length > 1 && !anyVariantInCart()) {
             <!-- Multi-variant not in cart: split button -->
-            <div class="flex border-2 border-[#0C831F] rounded-xl overflow-hidden">
+            <div class="flex border-2 border-[#0C831F] rounded-[8px] h-[36px] overflow-hidden">
               <button
-                class="flex-1 py-2 text-sm font-bold text-[#0C831F] hover:bg-green-50 transition-colors"
+                class="flex-1 text-center text-[#0C831F] font-bold text-[14px] hover:bg-[#0C831F] hover:text-white transition-colors"
                 (click)="openVariantModal()"
               >ADD</button>
               <div class="w-px bg-[#0C831F]"></div>
               <button
-                class="px-2 py-2 text-[11px] font-bold text-white bg-[#0C831F] hover:bg-green-700 transition-colors"
+                class="bg-[#0C831F] text-white text-[11px] font-bold px-2 flex items-center hover:bg-[#0a6b19] transition-colors"
                 (click)="openVariantModal()"
               >{{ product.variants.length }} options</button>
             </div>
           } @else if (product.variants.length > 1 && anyVariantInCart()) {
-            <!-- Multi-variant in cart: stepper + re-open modal -->
-            <div class="flex items-center border-2 border-[#0C831F] rounded-xl overflow-hidden">
+            <!-- Multi-variant in cart: solid green stepper -->
+            <div class="flex items-center bg-[#0C831F] rounded-[8px] h-[36px]">
               <button
-                class="w-11 h-9 flex items-center justify-center text-[#0C831F] hover:bg-green-50 font-bold"
+                class="w-9 h-[36px] flex items-center justify-center text-white text-[18px] font-light hover:bg-[#0a6b19] transition-colors rounded-l-[8px]"
                 (click)="openVariantModal()"
               >−</button>
-              <span class="flex-1 text-center text-sm font-bold text-[#0C831F]">
+              <span class="flex-1 text-center text-white text-[14px] font-bold">
                 {{ totalVariantQty() }}
               </span>
               <button
-                class="w-11 h-9 flex items-center justify-center text-[#0C831F] hover:bg-green-50 font-bold"
+                class="w-9 h-[36px] flex items-center justify-center text-white text-[18px] font-light hover:bg-[#0a6b19] transition-colors rounded-r-[8px]"
                 (click)="openVariantModal()"
               >+</button>
             </div>
           } @else if (!cartStore.isVariantInCart(product.variants[0]?.id ?? '')) {
-            <!-- Single variant not in cart -->
+            <!-- Single variant not in cart: outlined green -->
             <button
-              class="w-full bg-[#0C831F] text-white rounded-xl py-2 text-sm font-bold hover:bg-green-700 transition-colors"
+              class="w-full border-2 border-[#0C831F] rounded-[8px] h-[36px] text-[#0C831F] text-[14px] font-bold hover:bg-[#0C831F] hover:text-white transition-colors"
               (click)="addSingle()"
             >ADD</button>
           } @else {
-            <!-- Single variant stepper -->
-            <div class="flex items-center border-2 border-[#0C831F] rounded-xl overflow-hidden">
+            <!-- Single variant in cart: solid green stepper -->
+            <div class="flex items-center bg-[#0C831F] rounded-[8px] h-[36px]">
               <button
-                class="w-11 h-9 flex items-center justify-center text-[#0C831F] hover:bg-green-50 font-bold"
+                class="w-9 h-[36px] flex items-center justify-center text-white text-[18px] font-light hover:bg-[#0a6b19] transition-colors rounded-l-[8px]"
                 (click)="decrement()"
               >−</button>
-              <span class="flex-1 text-center text-sm font-bold text-[#0C831F]">
+              <span class="flex-1 text-center text-white text-[14px] font-bold">
                 {{ cartStore.getVariantQty(product.variants[0]?.id ?? '') }}
               </span>
               <button
-                class="w-11 h-9 flex items-center justify-center text-[#0C831F] hover:bg-green-50 font-bold"
+                class="w-9 h-[36px] flex items-center justify-center text-white text-[18px] font-light hover:bg-[#0a6b19] transition-colors rounded-r-[8px]"
                 (click)="addSingle()"
               >+</button>
             </div>
