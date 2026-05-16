@@ -4,6 +4,7 @@ import {
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AdminService } from '../../../core/services/admin.service';
+import { ImageService } from '../../../core/services/image.service';
 import { ICategory } from '../../../core/models';
 
 @Component({
@@ -50,7 +51,7 @@ import { ICategory } from '../../../core/models';
         </div>
         @for (cat of categories(); track cat.id; let i = $index) {
           <div class="grid grid-cols-[56px_2fr_1fr_1fr_1fr_1fr] gap-3 px-4 py-3 border-b border-[#F0F0F0] last:border-0 items-center">
-            <img [src]="cat.iconUrl" [alt]="cat.name" class="w-10 h-10 object-contain rounded-lg bg-gray-50 p-1" loading="lazy" />
+            <img [src]="categoryImages()[cat.id] || cat.iconUrl" [alt]="cat.name" class="w-10 h-10 object-contain rounded-lg bg-gray-50 p-1" loading="lazy" />
             <span class="text-sm font-medium">{{ cat.name }}</span>
             <span class="text-xs text-[#666666] font-mono">{{ cat.slug }}</span>
             <div class="flex gap-1">
@@ -77,8 +78,10 @@ import { ICategory } from '../../../core/models';
 export class AdminCategoriesComponent implements OnInit {
   private readonly adminService = inject(AdminService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly imageService = inject(ImageService);
 
   readonly categories = signal<ICategory[]>([]);
+  readonly categoryImages = signal<Record<string, string>>({});
   readonly loading = signal(true);
   readonly showAddForm = signal(false);
   readonly savingCat = signal(false);
@@ -92,7 +95,14 @@ export class AdminCategoriesComponent implements OnInit {
 
   ngOnInit(): void {
     this.adminService.getCategories().subscribe({
-      next: cats => { this.categories.set(cats); this.loading.set(false); },
+      next: cats => {
+        this.categories.set(cats);
+        this.loading.set(false);
+        cats.forEach(cat => {
+          this.imageService.getCategoryImage(cat.name, cat.id)
+            .subscribe(url => this.categoryImages.update(imgs => ({ ...imgs, [cat.id]: url })));
+        });
+      },
       error: () => this.loading.set(false),
     });
 

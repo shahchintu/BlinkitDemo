@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy, Component, EventEmitter, inject, OnInit, Output, signal,
 } from '@angular/core';
 import { ProductService } from '../../../core/services/product.service';
+import { ImageService } from '../../../core/services/image.service';
 import { ICategory } from '../../../core/models';
 
 @Component({
@@ -41,7 +42,7 @@ import { ICategory } from '../../../core/models';
               (click)="select(cat.id)"
             >
               <div class="w-12 h-12 rounded-full bg-[#F8F8F8] flex items-center justify-center overflow-hidden">
-                <img [src]="cat.iconUrl" [alt]="cat.name"
+                <img [src]="categoryImages()[cat.id] || cat.iconUrl" [alt]="cat.name"
                   class="w-8 h-8 object-contain" loading="lazy" />
               </div>
               <span class="text-[12px] font-semibold text-center leading-tight max-w-[72px] line-clamp-2"
@@ -60,15 +61,25 @@ export class CategoryStripComponent implements OnInit {
   @Output() categorySelected = new EventEmitter<string | null>();
 
   private readonly productService = inject(ProductService);
+  private readonly imageService = inject(ImageService);
 
   readonly categories = signal<ICategory[]>([]);
+  readonly categoryImages = signal<Record<string, string>>({});
   readonly loading = signal(true);
   readonly selected = signal<string | null>(null);
   readonly skeletons = Array(10);
 
   ngOnInit(): void {
     this.productService.getCategories().subscribe({
-      next: cats => { this.categories.set(cats); this.loading.set(false); },
+      next: cats => {
+        this.categories.set(cats);
+        this.loading.set(false);
+        cats.forEach(cat => {
+          this.imageService.getCategoryImage(cat.name, cat.id).subscribe(url => {
+            this.categoryImages.update(imgs => ({ ...imgs, [cat.id]: url }));
+          });
+        });
+      },
       error: () => this.loading.set(false),
     });
   }

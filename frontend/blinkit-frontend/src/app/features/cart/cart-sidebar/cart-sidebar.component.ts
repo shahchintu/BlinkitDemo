@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  effect,
   inject,
   OnInit,
   signal,
@@ -14,6 +15,7 @@ import { CartService } from '../../../core/services/cart.service';
 import { CartStore } from '../../../core/stores/cart.store';
 import { AuthStore } from '../../../core/stores/auth.store';
 import { CouponService } from '../../../core/services/coupon.service';
+import { ImageService } from '../../../core/services/image.service';
 import { ProductService } from '../../../core/services/product.service';
 import { LoginPromptDialogComponent } from '../../../shared/login-prompt-dialog/login-prompt-dialog.component';
 import { ICartItem, ICouponValidation, IProduct } from '../../../core/models';
@@ -97,7 +99,7 @@ import { formatPrice, getCategoryFallback } from '../../../shared/utils';
               @for (item of cartStore.cartItems(); track item.id) {
                 <div class="flex items-start gap-3 px-4 py-3">
                   <img
-                    [src]="item.variant.imageUrl"
+                    [src]="cartItemImages()[item.productId] || item.variant.imageUrl"
                     [alt]="item.product.name"
                     loading="lazy"
                     class="w-16 h-16 object-contain flex-shrink-0 rounded-[8px] bg-[#F8F8F8] p-1"
@@ -249,6 +251,7 @@ export class CartSidebarComponent implements OnInit {
   readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
   private readonly couponService = inject(CouponService);
+  private readonly imageService = inject(ImageService);
   private readonly productService = inject(ProductService);
 
   readonly fmt = formatPrice;
@@ -257,6 +260,23 @@ export class CartSidebarComponent implements OnInit {
   readonly appliedCoupon = signal<ICouponValidation | null>(null);
   readonly couponError = signal('');
   readonly relatedProducts = signal<IProduct[]>([]);
+  readonly cartItemImages = signal<Record<string, string>>({});
+
+  constructor() {
+    effect(() => {
+      this.cartStore.cartItems().forEach(item => {
+        if (!this.cartItemImages()[item.productId]) {
+          this.imageService.getProductImage(
+            item.product.name,
+            item.product.categoryName,
+            item.productId,
+          ).subscribe(url => {
+            this.cartItemImages.update(imgs => ({ ...imgs, [item.productId]: url }));
+          });
+        }
+      });
+    });
+  }
 
   ngOnInit(): void {
     this.cartService.cart$.pipe(

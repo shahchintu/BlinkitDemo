@@ -5,6 +5,7 @@ import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } fr
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { AdminService } from '../../../core/services/admin.service';
+import { ImageService } from '../../../core/services/image.service';
 import { ICategory, IProduct } from '../../../core/models';
 import { formatPrice } from '../../../shared/utils';
 
@@ -106,6 +107,13 @@ import { formatPrice } from '../../../shared/utils';
               class="w-full border border-[#E0E0E0] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#0C831F]" />
           </div>
 
+          @if (previewImageUrl()) {
+            <div class="flex flex-col items-center">
+              <img [src]="previewImageUrl()" class="w-24 h-24 object-cover rounded-xl border border-[#E0E0E0]" loading="lazy" />
+              <span class="text-[12px] text-[#666666] mt-1">Auto-loaded from Unsplash</span>
+            </div>
+          }
+
           <div class="flex gap-2 pt-1">
             <button type="submit"
               class="bg-[#0C831F] text-white px-5 py-2 rounded-xl text-sm font-semibold hover:bg-green-700 transition-colors disabled:opacity-50"
@@ -129,7 +137,7 @@ import { formatPrice } from '../../../shared/utils';
         </div>
         @for (product of products(); track product.id) {
           <div class="grid grid-cols-[56px_2fr_1.5fr_1fr_1fr_100px] gap-3 px-4 py-3 border-b border-[#F0F0F0] last:border-0 items-center">
-            <img [src]="product.imageUrl" [alt]="product.name" class="w-10 h-10 object-contain rounded-lg bg-gray-50 p-0.5" loading="lazy" />
+            <img [src]="productImages()[product.id] || product.imageUrl" [alt]="product.name" class="w-10 h-10 object-contain rounded-lg bg-gray-50 p-0.5" loading="lazy" />
             <div>
               <p class="text-sm font-medium truncate">{{ product.name }}</p>
               <p class="text-xs text-[#666666]">{{ product.variants.length }} variant(s)</p>
@@ -165,9 +173,12 @@ import { formatPrice } from '../../../shared/utils';
 export class AdminProductsComponent implements OnInit {
   private readonly adminService = inject(AdminService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly imageService = inject(ImageService);
 
   readonly products = signal<IProduct[]>([]);
   readonly categories = signal<ICategory[]>([]);
+  readonly productImages = signal<Record<string, string>>({});
+  readonly previewImageUrl = signal<string>('');
   readonly loading = signal(true);
   readonly saving = signal(false);
   readonly showForm = signal(false);
@@ -208,7 +219,15 @@ export class AdminProductsComponent implements OnInit {
     const search = this.searchCtrl.value ?? undefined;
     const categoryId = this.categoryCtrl.value ?? undefined;
     this.adminService.getProducts(this.page(), 10, search || undefined, categoryId || undefined).subscribe({
-      next: r => { this.products.set(r.items); this.totalPages.set(r.totalPages); this.loading.set(false); },
+      next: r => {
+        this.products.set(r.items);
+        this.totalPages.set(r.totalPages);
+        this.loading.set(false);
+        r.items.forEach(product => {
+          this.imageService.getProductImage(product.name, product.categoryName, product.id)
+            .subscribe(url => this.productImages.update(imgs => ({ ...imgs, [product.id]: url })));
+        });
+      },
       error: () => this.loading.set(false),
     });
   }
@@ -232,6 +251,7 @@ export class AdminProductsComponent implements OnInit {
 
   openForm(product: IProduct | null): void {
     this.editingId.set(product?.id ?? null);
+    this.previewImageUrl.set('');
     this.productForm.reset();
     while (this.variantsArray.length > 1) this.variantsArray.removeAt(1);
 
@@ -249,11 +269,13 @@ export class AdminProductsComponent implements OnInit {
         g.patchValue({ unit: v.unit, price: v.price, discountPrice: v.discountPrice, stockQty: v.stockQty, imageUrl: v.imageUrl });
         this.variantsArray.push(g);
       });
+      this.imageService.getProductImage(product.name, product.categoryName, product.id)
+        .subscribe(url => this.previewImageUrl.set(url));
     }
     this.showForm.set(true);
   }
 
-  closeForm(): void { this.showForm.set(false); this.editingId.set(null); }
+  closeForm(): void { this.showForm.set(false); this.editingId.set(null); this.previewImageUrl.set(''); }
 
   saveProduct(): void {
     if (this.productForm.invalid) return;

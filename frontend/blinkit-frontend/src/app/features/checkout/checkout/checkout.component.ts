@@ -483,7 +483,8 @@ export class CheckoutComponent implements OnInit {
             if (err === 'cancelled') {
               this.snackBar.open('Payment cancelled. Please try again.', 'OK', { duration: 3000 });
             } else {
-              this.snackBar.open('Payment failed. Please try again.', 'OK', { duration: 4000 });
+              const reason = this.razorpayErrorMessage(err);
+              this.snackBar.open(`Payment failed: ${reason}`, 'OK', { duration: 5000 });
             }
           },
         });
@@ -491,10 +492,20 @@ export class CheckoutComponent implements OnInit {
       error: (err: unknown) => {
         this.paying.set(false);
         const msg = err instanceof HttpErrorResponse
-          ? (err.error?.message ?? 'Could not create order. Please try again.')
+          ? (err.status === 0
+              ? 'Connection error. Please check the API is running.'
+              : (err.error?.message ?? 'Could not create order. Please try again.'))
           : 'Could not create order. Please try again.';
         this.snackBar.open(msg, 'OK', { duration: 4000 });
       },
     });
+  }
+
+  private razorpayErrorMessage(err: unknown): string {
+    if (err && typeof err === 'object' && 'error' in err) {
+      const e = (err as { error?: { description?: string } }).error;
+      if (e?.description) return e.description;
+    }
+    return 'Please try again.';
   }
 }

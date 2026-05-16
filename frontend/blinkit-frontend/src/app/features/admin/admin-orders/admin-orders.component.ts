@@ -4,6 +4,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AdminService } from '../../../core/services/admin.service';
+import { ImageService } from '../../../core/services/image.service';
 import { IOrder, OrderStatus } from '../../../core/models';
 import { formatPrice, timeAgo } from '../../../shared/utils';
 import { OrderDetailComponent } from '../../orders/order-detail/order-detail.component';
@@ -68,6 +69,16 @@ const STATUS_CHIP: Record<string, string> = {
           </div>
           @if (expandedId() === order.id) {
             <div class="px-4 pb-4 border-b border-[#F0F0F0]">
+              @if (order.items.length > 0) {
+                <div class="flex gap-2 mb-3 flex-wrap">
+                  @for (item of order.items; track item.id) {
+                    <img [src]="orderItemImages()[item.productId] || item.productImageUrl"
+                         [alt]="item.productName"
+                         class="w-12 h-12 object-cover rounded-lg border border-[#E0E0E0] bg-white p-0.5"
+                         loading="lazy" />
+                  }
+                </div>
+              }
               <app-order-detail [order]="order" />
             </div>
           }
@@ -90,8 +101,10 @@ const STATUS_CHIP: Record<string, string> = {
 export class AdminOrdersComponent implements OnInit {
   private readonly adminService = inject(AdminService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly imageService = inject(ImageService);
 
   readonly orders = signal<IOrder[]>([]);
+  readonly orderItemImages = signal<Record<string, string>>({});
   readonly loading = signal(true);
   readonly expandedId = signal<string | null>(null);
   readonly page = signal(1);
@@ -129,7 +142,15 @@ export class AdminOrdersComponent implements OnInit {
   }
 
   toggleDetail(id: string): void {
-    this.expandedId.set(this.expandedId() === id ? null : id);
+    if (this.expandedId() === id) { this.expandedId.set(null); return; }
+    this.expandedId.set(id);
+    const order = this.orders().find(o => o.id === id);
+    order?.items.forEach(item => {
+      if (!this.orderItemImages()[item.productId]) {
+        this.imageService.getProductImage(item.productName, '', item.productId)
+          .subscribe(url => this.orderItemImages.update(imgs => ({ ...imgs, [item.productId]: url })));
+      }
+    });
   }
 
   updateStatus(orderId: string, status: string): void {

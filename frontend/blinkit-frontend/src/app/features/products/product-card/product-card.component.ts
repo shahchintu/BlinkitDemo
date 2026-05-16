@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, Input, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { CartStore } from '../../../core/stores/cart.store';
 import { CartService } from '../../../core/services/cart.service';
+import { ImageService } from '../../../core/services/image.service';
 import { IProduct } from '../../../core/models';
-import { formatPrice, getCategoryFallback } from '../../../shared/utils';
+import { formatPrice, onImgError } from '../../../shared/utils';
 import { ProductVariantModalComponent } from '../product-variant-modal/product-variant-modal.component';
 
 @Component({
@@ -30,11 +31,11 @@ import { ProductVariantModalComponent } from '../product-variant-modal/product-v
         }
 
         <img
-          [src]="product.imageUrl"
+          [src]="realImageUrl()"
           [alt]="product.name"
           loading="lazy"
           class="w-full h-full object-contain p-3"
-          (error)="onImgError($event)"
+          (error)="onImgError($event, product.categoryName)"
         />
 
         @if (product.stockQty === 0) {
@@ -124,14 +125,26 @@ import { ProductVariantModalComponent } from '../product-variant-modal/product-v
     </div>
   `,
 })
-export class ProductCardComponent {
+export class ProductCardComponent implements OnInit {
   @Input({ required: true }) product!: IProduct;
 
   readonly cartStore = inject(CartStore);
   private readonly cartService = inject(CartService);
+  private readonly imageService = inject(ImageService);
   private readonly dialog = inject(MatDialog);
 
   readonly fmt = formatPrice;
+  readonly onImgError = onImgError;
+  readonly realImageUrl = signal<string>('');
+
+  ngOnInit(): void {
+    this.realImageUrl.set(this.product.imageUrl);
+    this.imageService.getProductImage(
+      this.product.name,
+      this.product.categoryName,
+      this.product.id,
+    ).subscribe(url => { if (url) this.realImageUrl.set(url); });
+  }
 
   discount(): number {
     if (!this.product.discountPrice) return 0;
@@ -167,7 +180,4 @@ export class ProductCardComponent {
     if (storeItem) this.cartService.updateQty(storeItem.id, storeItem.quantity - 1).subscribe();
   }
 
-  onImgError(event: Event): void {
-    (event.target as HTMLImageElement).src = getCategoryFallback(this.product.categoryName);
-  }
 }

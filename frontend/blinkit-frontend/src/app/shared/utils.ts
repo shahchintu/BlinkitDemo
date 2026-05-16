@@ -60,3 +60,9 @@ export function slugify(name: string): string {
 export function getCategoryFallback(category: string): string {
   return CATEGORY_FALLBACK[category] ?? 'https://picsum.photos/seed/food/200/200';
 }
+
+export function onImgError(event: Event, category: string): void {
+  const img = event.target as HTMLImageElement;
+  img.src = getCategoryFallback(category);
+  img.onerror = null;
+}

@@ -3,6 +3,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ProductService } from '../../../core/services/product.service';
+import { ImageService } from '../../../core/services/image.service';
 import { CartStore } from '../../../core/stores/cart.store';
 import { IProduct, IProductVariant } from '../../../core/models';
 import { formatPrice, getCategoryFallback } from '../../../shared/utils';
@@ -65,7 +66,7 @@ import { ProductCardComponent } from '../product-card/product-card.component';
               </div>
 
               <!-- Thumbnails -->
-              @if (product()!.images.length > 1) {
+              @if (galleryImages().length > 1) {
                 <div class="flex items-center gap-2 mt-3">
                   <button
                     class="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-white border border-[#E0E0E0] shadow hover:border-[#0C831F] transition-colors"
@@ -75,7 +76,7 @@ import { ProductCardComponent } from '../product-card/product-card.component';
                     </svg>
                   </button>
                   <div class="flex gap-2 overflow-x-auto scrollbar-hide flex-1">
-                    @for (img of product()!.images; track $index) {
+                    @for (img of galleryImages(); track $index) {
                       <button
                         class="w-16 h-16 flex-shrink-0 rounded-lg border-2 p-1 bg-gray-50 overflow-hidden transition-colors"
                         [class]="selectedImage() === img ? 'border-[#0C831F]' : 'border-transparent hover:border-[#E0E0E0]'"
@@ -231,11 +232,13 @@ import { ProductCardComponent } from '../product-card/product-card.component';
 export class ProductDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly productService = inject(ProductService);
+  private readonly imageService = inject(ImageService);
   readonly cartStore = inject(CartStore);
 
   readonly product = signal<IProduct | null>(null);
   readonly selectedVariant = signal<IProductVariant | null>(null);
   readonly selectedImage = signal('');
+  readonly galleryImages = signal<string[]>([]);
   readonly relatedProducts = signal<IProduct[]>([]);
   readonly loading = signal(true);
   readonly error = signal(false);
@@ -276,6 +279,7 @@ export class ProductDetailComponent implements OnInit {
   private load(id: string): void {
     this.loading.set(true);
     this.error.set(false);
+    this.galleryImages.set([]);
     this.productService.getProductById(id).subscribe({
       next: p => {
         this.product.set(p);
@@ -283,6 +287,12 @@ export class ProductDetailComponent implements OnInit {
         this.selectedImage.set(p.images[0] ?? p.imageUrl);
         this.loading.set(false);
         this.loadRelated(id);
+        this.imageService.getGalleryImages(p.name, p.categoryName, p.id).subscribe(urls => {
+          if (urls.length > 0) {
+            this.galleryImages.set(urls);
+            this.selectedImage.set(urls[0]);
+          }
+        });
       },
       error: () => { this.error.set(true); this.loading.set(false); },
     });
@@ -317,7 +327,7 @@ export class ProductDetailComponent implements OnInit {
   }
 
   scrollThumbs(dir: number): void {
-    const imgs = this.product()?.images ?? [];
+    const imgs = this.galleryImages();
     const current = imgs.indexOf(this.selectedImage());
     const next = (current + dir + imgs.length) % imgs.length;
     this.selectedImage.set(imgs[next]);

@@ -7,6 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { OrderDetailComponent } from '../order-detail/order-detail.component';
 import { OrderService } from '../../../core/services/order.service';
 import { CartService } from '../../../core/services/cart.service';
+import { ImageService } from '../../../core/services/image.service';
 import { AuthStore } from '../../../core/stores/auth.store';
 import { AuthService } from '../../../core/services/auth.service';
 import { IOrder, IOrderItem } from '../../../core/models';
@@ -157,7 +158,7 @@ const STATUS_MAP: Record<string, StatusInfo> = {
                 @if (order.items.length > 0) {
                   <div class="px-5 pb-3 flex gap-2 items-center overflow-x-auto">
                     @for (item of thumbnails(order.items); track item.id) {
-                      <img [src]="item.productImageUrl" [alt]="item.productName"
+                      <img [src]="orderImages()[item.productId] || item.productImageUrl" [alt]="item.productName"
                         class="w-[80px] h-[80px] border border-[#E0E0E0] rounded-[8px] bg-white object-contain p-1 flex-shrink-0"
                         loading="lazy" (error)="onImgError($event)" />
                     }
@@ -209,12 +210,14 @@ const STATUS_MAP: Record<string, StatusInfo> = {
 export class OrderHistoryComponent implements OnInit {
   private readonly orderService = inject(OrderService);
   private readonly cartService = inject(CartService);
+  private readonly imageService = inject(ImageService);
   private readonly snackBar = inject(MatSnackBar);
   readonly authStore = inject(AuthStore);
   private readonly authService = inject(AuthService);
   readonly router = inject(Router);
 
   readonly orders = signal<IOrder[]>([]);
+  readonly orderImages = signal<Record<string, string>>({});
   readonly loading = signal(true);
   readonly expandedId = signal<string | null>(null);
   readonly detailOrder = signal<IOrder | null>(null);
@@ -226,7 +229,18 @@ export class OrderHistoryComponent implements OnInit {
 
   ngOnInit(): void {
     this.orderService.getOrders().subscribe({
-      next: orders => { this.orders.set(orders); this.loading.set(false); },
+      next: orders => {
+        this.orders.set(orders);
+        this.loading.set(false);
+        orders.forEach(order => {
+          order.items?.forEach(item => {
+            this.imageService.getProductImage(item.productName, '', item.productId)
+              .subscribe(url => {
+                this.orderImages.update(imgs => ({ ...imgs, [item.productId]: url }));
+              });
+          });
+        });
+      },
       error: () => this.loading.set(false),
     });
   }

@@ -57,7 +57,10 @@ builder.Services.AddScoped<IRedisCartService, RedisCartService>();
 builder.Services.AddScoped<ICouponRepository, CouponRepository>();
 builder.Services.AddScoped<IRazorpayService, RazorpayService>();
 builder.Services.AddScoped<IEmailService, ResendEmailService>();
+builder.Services.AddScoped<IUnsplashService, UnsplashService>();
 builder.Services.AddScoped<IBlinkitDbContext>(sp => sp.GetRequiredService<BlinkitDbContext>());
+
+builder.Services.AddHttpClient("Unsplash");
 
 // Resend email
 builder.Services.AddOptions<ResendClientOptions>()
