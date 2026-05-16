@@ -20,9 +20,7 @@ import { FilterSidebarComponent, FilterState } from './filter-sidebar/filter-sid
       <aside class="hidden md:block w-56 flex-shrink-0 sticky top-16 self-start h-[calc(100vh-4rem)] overflow-y-auto p-4">
         <app-filter-sidebar
           [categories]="categories()"
-          [selectedCategoryId]="filterState().categoryId"
-          [maxPrice]="filterState().maxPrice"
-          [sortBy]="filterState().sortBy"
+          [currentFilters]="currentFilters()"
           (filtersChanged)="onFiltersChanged($event)" />
       </aside>
 
@@ -43,19 +41,19 @@ import { FilterSidebarComponent, FilterState } from './filter-sidebar/filter-sid
         <div class="mb-4">
           <h1 class="text-lg font-bold text-[#1A1A1A]">
             @if (searchQuery()) { Results for "{{ searchQuery() }}" }
-            @else if (filterState().categoryId) { {{ activeCategoryName() }} }
+            @else if (currentFilters().categoryId) { {{ activeCategoryName() }} }
             @else { All Products }
           </h1>
-          @if (!loading() && totalCount() > 0) {
+          @if (!isLoading() && totalCount() > 0) {
             <p class="text-xs text-[#666666] mt-0.5">
-              {{ displayProducts().length }} of {{ totalCount() }} products
+              {{ products().length }} of {{ totalCount() }} products
             </p>
           }
         </div>
 
         <!-- Product grid -->
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          @if (loading()) {
+          @if (isLoading()) {
             @for (_ of skeletons; track $index) {
               <div class="rounded-2xl border border-[#E0E0E0] overflow-hidden animate-pulse">
                 <div class="h-40 bg-gray-200"></div>
@@ -66,7 +64,7 @@ import { FilterSidebarComponent, FilterState } from './filter-sidebar/filter-sid
                 </div>
               </div>
             }
-          } @else if (displayProducts().length === 0) {
+          } @else if (products().length === 0) {
             <div class="col-span-full flex flex-col items-center justify-center py-20 text-[#666666]">
               <div class="text-4xl mb-3">🔍</div>
               <div class="font-medium">No products found</div>
@@ -75,24 +73,37 @@ import { FilterSidebarComponent, FilterState } from './filter-sidebar/filter-sid
               }
             </div>
           } @else {
-            @for (product of displayProducts(); track product.id) {
+            @for (product of products(); track product.id) {
               <app-product-card [product]="product" />
             }
           }
         </div>
 
         <!-- Pagination -->
-        @if (!loading() && totalPages() > 1) {
-          <div class="flex justify-center gap-2 mt-8">
+        @if (!isLoading() && totalPages() > 1) {
+          <div class="flex items-center justify-center gap-2 mt-8 pb-8">
             <button
-              class="px-4 py-2 rounded-xl border border-[#E0E0E0] text-sm hover:border-[#0C831F] disabled:opacity-40 bg-white"
               [disabled]="currentPage() === 1"
-              (click)="goPage(currentPage() - 1)">← Prev</button>
-            <span class="px-4 py-2 text-sm text-[#666666]">{{ currentPage() }} / {{ totalPages() }}</span>
+              (click)="onPageChange(currentPage() - 1)"
+              class="border border-[#E0E0E0] rounded-[8px] px-4 py-2 disabled:opacity-40 disabled:cursor-not-allowed bg-white text-[#1A1A1A]">
+              Previous
+            </button>
+            
+            @for (page of getPageNumbers(); track page) {
+              <button
+                class="w-10 h-10 rounded-[8px] flex items-center justify-center border border-[#E0E0E0]"
+                [class]="page === currentPage() ? 'bg-[#0C831F] text-white font-bold border-[#0C831F]' : 'bg-white text-[#1A1A1A] hover:border-[#0C831F]'"
+                (click)="onPageChange(page)">
+                {{ page }}
+              </button>
+            }
+            
             <button
-              class="px-4 py-2 rounded-xl border border-[#E0E0E0] text-sm hover:border-[#0C831F] disabled:opacity-40 bg-white"
               [disabled]="currentPage() === totalPages()"
-              (click)="goPage(currentPage() + 1)">Next →</button>
+              (click)="onPageChange(currentPage() + 1)"
+              class="border border-[#E0E0E0] rounded-[8px] px-4 py-2 disabled:opacity-40 disabled:cursor-not-allowed bg-white text-[#1A1A1A]">
+              Next
+            </button>
           </div>
         }
       </div>
@@ -116,9 +127,7 @@ import { FilterSidebarComponent, FilterState } from './filter-sidebar/filter-sid
         <div class="p-4">
           <app-filter-sidebar
             [categories]="categories()"
-            [selectedCategoryId]="filterState().categoryId"
-            [maxPrice]="filterState().maxPrice"
-            [sortBy]="filterState().sortBy"
+            [currentFilters]="currentFilters()"
             (filtersChanged)="onFiltersChanged($event); mobileFilterOpen.set(false)" />
         </div>
       </div>
@@ -130,117 +139,126 @@ export class ProductListComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
-  readonly rawProducts = signal<IProduct[]>([]);
-  readonly displayProducts = signal<IProduct[]>([]);
+  readonly products = signal<IProduct[]>([]);
   readonly categories = signal<ICategory[]>([]);
-  readonly loading = signal(true);
+  readonly isLoading = signal(false);
   readonly totalCount = signal(0);
-  readonly totalPages = signal(1);
+  readonly totalPages = signal(0);
   readonly currentPage = signal(1);
+  readonly pageSize = 20;
+  
   readonly searchQuery = signal('');
   readonly activeCategoryName = signal('');
   readonly mobileFilterOpen = signal(false);
   readonly skeletons = Array(8);
 
-  readonly filterState = signal<FilterState>({
+  readonly currentFilters = signal<FilterState>({
     categoryId: null,
     minPrice: 0,
     maxPrice: 2000,
     sortBy: 'relevance',
   });
 
+  private isNavigating = false;
+
   ngOnInit(): void {
     this.productService.getCategories().subscribe(cats => this.categories.set(cats));
 
     this.route.queryParamMap.subscribe(params => {
+      if (this.isNavigating) {
+        this.isNavigating = false;
+        return;
+      }
       const q = params.get('q') ?? '';
       const catId = params.get('category') ?? null;
+      const sortBy = (params.get('sortBy') as FilterState['sortBy']) || 'relevance';
+      const page = parseInt(params.get('page') ?? '1', 10);
+      
       this.searchQuery.set(q);
-      this.filterState.update(s => ({ ...s, categoryId: catId }));
-      this.currentPage.set(1);
-      this.load();
+      this.currentPage.set(page);
+      this.currentFilters.set({
+        categoryId: catId,
+        minPrice: 0,
+        maxPrice: 2000,
+        sortBy: sortBy
+      });
+      
+      this.fetchProducts();
     });
   }
 
-  onFiltersChanged(state: FilterState): void {
-    const prev = this.filterState();
-    this.filterState.set(state);
-
-    if (state.categoryId !== prev.categoryId) {
-      // Category changed → update URL (triggers queryParamMap → load())
-      this.currentPage.set(1);
-      this.router.navigate([], {
-        queryParams: {
-          category: state.categoryId ?? null,
-          q: this.searchQuery() || null,
-        },
-        queryParamsHandling: 'merge',
-        replaceUrl: true,
-      });
-    } else {
-      // Price or sort changed → apply client-side only
-      this.applyClientFilters();
-    }
-
-    if (state.categoryId) {
-      const cat = this.categories().find(c => c.id === state.categoryId);
-      if (cat) this.activeCategoryName.set(cat.name);
-    } else {
-      this.activeCategoryName.set('');
-    }
-  }
-
-  private load(): void {
-    this.loading.set(true);
+  fetchProducts(): void {
+    this.isLoading.set(true);
+    const filters = this.currentFilters();
+    
     this.productService.getProducts({
       search: this.searchQuery() || undefined,
-      categoryId: this.filterState().categoryId ?? undefined,
+      categoryId: filters.categoryId ?? undefined,
       page: this.currentPage(),
-      pageSize: 20,
+      pageSize: this.pageSize,
+      sortBy: filters.sortBy,
+      minPrice: filters.minPrice,
+      maxPrice: filters.maxPrice
     }).subscribe({
-      next: res => {
-        this.rawProducts.set(res.items);
-        this.totalCount.set(res.totalCount);
-        this.totalPages.set(res.totalPages);
-        const cat = this.categories().find(c => c.id === this.filterState().categoryId);
-        if (cat) this.activeCategoryName.set(cat.name);
-        this.loading.set(false);
-        this.applyClientFilters();
+      next: (result) => {
+        this.products.set(result.items);
+        this.totalCount.set(result.totalCount);
+        this.totalPages.set(result.totalPages);
+        
+        const cat = this.categories().find(c => c.id === filters.categoryId);
+        this.activeCategoryName.set(cat ? cat.name : '');
+        
+        this.isLoading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => this.isLoading.set(false),
     });
   }
 
-  private applyClientFilters(): void {
-    const { maxPrice, sortBy } = this.filterState();
-    let items = [...this.rawProducts()];
-
-    if (maxPrice < 2000) {
-      items = items.filter(p => (p.discountPrice ?? p.price) <= maxPrice);
-    }
-
-    switch (sortBy) {
-      case 'price_asc':
-        items.sort((a, b) => (a.discountPrice ?? a.price) - (b.discountPrice ?? b.price));
-        break;
-      case 'price_desc':
-        items.sort((a, b) => (b.discountPrice ?? b.price) - (a.discountPrice ?? a.price));
-        break;
-      case 'discount':
-        items.sort((a, b) => {
-          const da = a.discountPrice ? (a.price - a.discountPrice) / a.price : 0;
-          const db = b.discountPrice ? (b.price - b.discountPrice) / b.price : 0;
-          return db - da;
-        });
-        break;
-    }
-
-    this.displayProducts.set(items);
+  onFiltersChanged(newFilters: FilterState): void {
+    this.currentFilters.set(newFilters);
+    this.currentPage.set(1);
+    this.updateUrlParams();
+    this.fetchProducts();
   }
 
-  goPage(page: number): void {
+  onPageChange(page: number): void {
     this.currentPage.set(page);
-    this.load();
+    this.updateUrlParams();
+    this.fetchProducts();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  updateUrlParams(): void {
+    this.isNavigating = true;
+    this.router.navigate([], {
+      queryParams: {
+        category: this.currentFilters().categoryId,
+        sortBy: this.currentFilters().sortBy !== 'relevance' 
+          ? this.currentFilters().sortBy : null,
+        page: this.currentPage() > 1 ? this.currentPage() : null,
+        q: this.searchQuery() || null
+      },
+      queryParamsHandling: 'merge',
+      replaceUrl: true
+    });
+  }
+
+  getPageNumbers(): number[] {
+    const total = this.totalPages();
+    const current = this.currentPage();
+    const pages: number[] = [];
+    
+    let start = Math.max(1, current - 2);
+    let end = Math.min(total, start + 4);
+    
+    if (end - start < 4) {
+      start = Math.max(1, end - 4);
+    }
+    
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    
+    return pages;
   }
 }

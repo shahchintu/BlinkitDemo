@@ -37,21 +37,31 @@ interface PagedResultDto<T> {
   totalPages: number;
 }
 
+export interface ProductFilters {
+  search?: string;
+  categoryId?: string;
+  page?: number;
+  pageSize?: number;
+  sortBy?: 'relevance' | 'price_asc' | 'price_desc' | 'discount';
+  minPrice?: number;
+  maxPrice?: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ProductService {
   private readonly http = inject(HttpClient);
 
-  getProducts(filters?: {
-    search?: string;
-    categoryId?: string;
-    page?: number;
-    pageSize?: number;
-  }): Observable<IPaginatedResult<IProduct>> {
+  getProducts(filters?: ProductFilters): Observable<IPaginatedResult<IProduct>> {
     let params = new HttpParams();
     if (filters?.search)     params = params.set('search', filters.search);
     if (filters?.categoryId) params = params.set('categoryId', filters.categoryId);
     if (filters?.page)       params = params.set('page', filters.page.toString());
     if (filters?.pageSize)   params = params.set('pageSize', filters.pageSize.toString());
+    if (filters?.sortBy && filters.sortBy !== 'relevance')
+      params = params.set('sortBy', filters.sortBy);
+    if (filters?.minPrice)   params = params.set('minPrice', filters.minPrice.toString());
+    if (filters?.maxPrice && filters.maxPrice < 2000) 
+      params = params.set('maxPrice', filters.maxPrice.toString());
 
     return this.http
       .get<PagedResultDto<ProductDto>>('/api/products', { params })

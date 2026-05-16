@@ -18,9 +18,13 @@ public class ProductsController(IMediator mediator) : ControllerBase
         [FromQuery] Guid? categoryId,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
+        [FromQuery] string sortBy = "relevance",
+        [FromQuery] decimal minPrice = 0,
+        [FromQuery] decimal maxPrice = 999999,
         CancellationToken ct = default)
     {
-        var result = await mediator.Send(new GetProductsQuery(search, categoryId, page, pageSize), ct);
+        var query = new GetProductsQuery(search, categoryId, page, pageSize, sortBy, minPrice, maxPrice);
+        var result = await mediator.Send(query, ct);
         return Ok(result);
     }
 

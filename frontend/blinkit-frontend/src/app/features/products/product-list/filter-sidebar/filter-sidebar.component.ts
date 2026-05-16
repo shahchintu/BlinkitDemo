@@ -1,5 +1,5 @@
 import {
-  ChangeDetectionStrategy, Component, EventEmitter, Input, Output,
+  ChangeDetectionStrategy, Component, EventEmitter, Input, Output, signal, OnChanges, SimpleChanges
 } from '@angular/core';
 import { ICategory } from '../../../../core/models';
 
@@ -33,8 +33,8 @@ export interface FilterState {
           <!-- All -->
           <div class="flex items-center gap-2 py-2 cursor-pointer" (click)="selectCategory(null)">
             <div class="w-4 h-4 border-2 rounded-full flex items-center justify-center flex-shrink-0"
-              [class]="selectedCategoryId === null ? 'border-[#0C831F]' : 'border-[#CCCCCC]'">
-              @if (selectedCategoryId === null) {
+              [class]="selectedCategoryId() === null ? 'border-[#0C831F]' : 'border-[#CCCCCC]'">
+              @if (selectedCategoryId() === null) {
                 <div class="w-2 h-2 rounded-full bg-[#0C831F]"></div>
               }
             </div>
@@ -44,8 +44,8 @@ export interface FilterState {
           @for (cat of categories; track cat.id) {
             <div class="flex items-center gap-2 py-2 cursor-pointer" (click)="selectCategory(cat.id)">
               <div class="w-4 h-4 border-2 rounded-full flex items-center justify-center flex-shrink-0"
-                [class]="selectedCategoryId === cat.id ? 'border-[#0C831F]' : 'border-[#CCCCCC]'">
-                @if (selectedCategoryId === cat.id) {
+                [class]="selectedCategoryId() === cat.id ? 'border-[#0C831F]' : 'border-[#CCCCCC]'">
+                @if (selectedCategoryId() === cat.id) {
                   <div class="w-2 h-2 rounded-full bg-[#0C831F]"></div>
                 }
               </div>
@@ -58,13 +58,13 @@ export interface FilterState {
       <!-- Price Range -->
       <div class="mt-4 border-t border-[#F2F2F2] pt-4">
         <p class="text-[13px] font-semibold text-[#666666] uppercase tracking-wide mb-2">Price Range</p>
-        <p class="text-[13px] text-[#1A1A1A] mb-3">₹0 — ₹{{ maxPrice }}</p>
+        <p class="text-[13px] text-[#1A1A1A] mb-3">₹{{ minPrice() }} — ₹{{ maxPrice() }}</p>
         <input
           type="range"
           min="0"
           max="2000"
           step="10"
-          [value]="maxPrice"
+          [value]="maxPrice()"
           (input)="onPriceInput($event)"
           class="w-full accent-[#0C831F] cursor-pointer"
         />
@@ -81,8 +81,8 @@ export interface FilterState {
           @for (opt of sortOptions; track opt.value) {
             <div class="flex items-center gap-2 py-2 cursor-pointer" (click)="selectSort(opt.value)">
               <div class="w-4 h-4 border-2 rounded-full flex items-center justify-center flex-shrink-0"
-                [class]="sortBy === opt.value ? 'border-[#0C831F]' : 'border-[#CCCCCC]'">
-                @if (sortBy === opt.value) {
+                [class]="selectedSort() === opt.value ? 'border-[#0C831F]' : 'border-[#CCCCCC]'">
+                @if (selectedSort() === opt.value) {
                   <div class="w-2 h-2 rounded-full bg-[#0C831F]"></div>
                 }
               </div>
@@ -94,12 +94,15 @@ export interface FilterState {
     </div>
   `,
 })
-export class FilterSidebarComponent {
+export class FilterSidebarComponent implements OnChanges {
   @Input() categories: ICategory[] = [];
-  @Input() selectedCategoryId: string | null = null;
-  @Input() maxPrice: number = 2000;
-  @Input() sortBy: FilterState['sortBy'] = 'relevance';
+  @Input() currentFilters!: FilterState;
   @Output() filtersChanged = new EventEmitter<FilterState>();
+
+  selectedCategoryId = signal<string | null>(null);
+  selectedSort = signal<string>('relevance');
+  minPrice = signal<number>(0);
+  maxPrice = signal<number>(2000);
 
   readonly sortOptions: { label: string; value: FilterState['sortBy'] }[] = [
     { label: 'Relevance',          value: 'relevance' },
@@ -108,41 +111,57 @@ export class FilterSidebarComponent {
     { label: 'Discount %',         value: 'discount' },
   ];
 
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['currentFilters'] && this.currentFilters) {
+      this.selectedCategoryId.set(this.currentFilters.categoryId);
+      this.selectedSort.set(this.currentFilters.sortBy);
+      this.minPrice.set(this.currentFilters.minPrice);
+      this.maxPrice.set(this.currentFilters.maxPrice);
+    }
+  }
+
   hasActiveFilters(): boolean {
-    return this.selectedCategoryId !== null
-      || this.maxPrice < 2000
-      || this.sortBy !== 'relevance';
+    return this.selectedCategoryId() !== null
+      || this.minPrice() > 0
+      || this.maxPrice() < 2000
+      || this.selectedSort() !== 'relevance';
   }
 
   selectCategory(id: string | null): void {
-    this.filtersChanged.emit({
-      categoryId: id,
-      minPrice: 0,
-      maxPrice: this.maxPrice,
-      sortBy: this.sortBy,
-    });
+    this.selectedCategoryId.set(id);
+    this.emitFilters();
   }
 
   onPriceInput(event: Event): void {
     const val = Number((event.target as HTMLInputElement).value);
-    this.filtersChanged.emit({
-      categoryId: this.selectedCategoryId,
-      minPrice: 0,
-      maxPrice: val,
-      sortBy: this.sortBy,
-    });
+    this.onPriceChange(0, val);
   }
 
-  selectSort(value: FilterState['sortBy']): void {
-    this.filtersChanged.emit({
-      categoryId: this.selectedCategoryId,
-      minPrice: 0,
-      maxPrice: this.maxPrice,
-      sortBy: value,
-    });
+  onPriceChange(min: number, max: number): void {
+    this.minPrice.set(min);
+    this.maxPrice.set(max);
+    this.emitFilters();
+  }
+
+  selectSort(sort: string): void {
+    this.selectedSort.set(sort);
+    this.emitFilters();
   }
 
   clearAll(): void {
-    this.filtersChanged.emit({ categoryId: null, minPrice: 0, maxPrice: 2000, sortBy: 'relevance' });
+    this.selectedCategoryId.set(null);
+    this.selectedSort.set('relevance');
+    this.minPrice.set(0);
+    this.maxPrice.set(2000);
+    this.emitFilters();
+  }
+
+  emitFilters(): void {
+    this.filtersChanged.emit({
+      categoryId: this.selectedCategoryId(),
+      minPrice: this.minPrice(),
+      maxPrice: this.maxPrice(),
+      sortBy: this.selectedSort() as FilterState['sortBy']
+    });
   }
 }

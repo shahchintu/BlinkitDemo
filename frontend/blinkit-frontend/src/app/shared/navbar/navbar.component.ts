@@ -1,7 +1,6 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal, HostListener, ElementRef } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
-import { MatIconModule } from '@angular/material/icon';
 import { AuthStore } from '../../core/stores/auth.store';
 import { AuthService } from '../../core/services/auth.service';
 import { CartStore } from '../../core/stores/cart.store';
@@ -16,7 +15,7 @@ interface UserLocation { city: string; state: string; pincode: string; }
   selector: 'app-navbar',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, SearchBarComponent, MatIconModule],
+  imports: [RouterLink, SearchBarComponent],
   template: `
     <header class="sticky top-0 z-50 bg-white border-b border-[#E0E0E0] shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
       <div class="flex items-center gap-4 h-16 max-w-[1200px] mx-auto px-4">
@@ -61,23 +60,18 @@ interface UserLocation { city: string; state: string; pincode: string; }
             <!-- Logged in: Account dropdown -->
             <div class="relative">
 
-              <!-- Click-outside backdrop -->
-              @if (isDropdownOpen()) {
-                <div class="fixed inset-0 z-[99]" (click)="closeDropdown()"></div>
-              }
-
               <!-- Account trigger button -->
               <button
                 class="flex items-center gap-1.5 cursor-pointer hover:text-[#0C831F] transition"
                 (click)="toggleDropdown()"
               >
                 <span class="text-[15px] font-semibold text-[#1A1A1A]">Account</span>
-                <mat-icon class="text-[18px] leading-none text-[#666666]">expand_more</mat-icon>
+                <span class="material-icons text-[18px] leading-none text-[#666666]">expand_more</span>
               </button>
 
               <!-- Dropdown panel -->
               @if (isDropdownOpen()) {
-                <div class="absolute right-0 top-[calc(100%+8px)] bg-white rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.15)] border border-[#F0F0F0] w-[280px] z-[100] overflow-hidden">
+                <div class="absolute right-0 top-[calc(100%+8px)] bg-white rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.15)] border border-[#F0F0F0] min-w-[280px] z-[100] overflow-hidden">
 
                   <!-- User info -->
                   <div class="px-5 py-4 border-b border-[#F5F5F5]">
@@ -89,32 +83,32 @@ interface UserLocation { city: string; state: string; pincode: string; }
                   <div class="py-1">
 
                     <div (click)="navigate('/orders')"
-                      class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] cursor-pointer transition">
-                      <mat-icon class="text-[20px] text-[#666666]">shopping_bag</mat-icon>
+                      class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] cursor-pointer transition whitespace-nowrap">
+                      <span class="material-icons text-[20px] text-[#666666]">shopping_bag</span>
                       <span class="text-[14px] text-[#1A1A1A] font-medium">My Orders</span>
                     </div>
 
                     <div (click)="navigate('/account/addresses')"
-                      class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] cursor-pointer transition">
-                      <mat-icon class="text-[20px] text-[#666666]">location_on</mat-icon>
+                      class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] cursor-pointer transition whitespace-nowrap">
+                      <span class="material-icons text-[20px] text-[#666666]">location_on</span>
                       <span class="text-[14px] text-[#1A1A1A] font-medium">Saved Addresses</span>
                     </div>
 
                     <div (click)="navigate('/account/blinkit-plus')"
-                      class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] cursor-pointer transition">
-                      <mat-icon class="text-[20px] text-[#F8C200]">star</mat-icon>
+                      class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] cursor-pointer transition whitespace-nowrap">
+                      <span class="material-icons text-[20px] text-[#F8C200]">star</span>
                       <span class="text-[14px] text-[#1A1A1A] font-medium">Blinkit Plus</span>
                     </div>
 
                     <div (click)="navigate('/help')"
-                      class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] cursor-pointer transition">
-                      <mat-icon class="text-[20px] text-[#666666]">help_outline</mat-icon>
+                      class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] cursor-pointer transition whitespace-nowrap">
+                      <span class="material-icons text-[20px] text-[#666666]">help_outline</span>
                       <span class="text-[14px] text-[#1A1A1A] font-medium">FAQ's</span>
                     </div>
 
                     <div (click)="navigate('/account')"
-                      class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] cursor-pointer transition">
-                      <mat-icon class="text-[20px] text-[#666666]">lock_outline</mat-icon>
+                      class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] cursor-pointer transition whitespace-nowrap">
+                      <span class="material-icons text-[20px] text-[#666666]">lock_outline</span>
                       <span class="text-[14px] text-[#1A1A1A] font-medium">Account Privacy</span>
                     </div>
 
@@ -122,8 +116,8 @@ interface UserLocation { city: string; state: string; pincode: string; }
                     @if (currentUser()?.role === 'Admin') {
                       <div class="border-t border-[#F5F5F5]">
                         <div (click)="navigate('/admin')"
-                          class="flex items-center gap-3 px-5 py-3 hover:bg-[#FFF8E1] cursor-pointer transition">
-                          <mat-icon class="text-[20px] text-[#F57C00]">admin_panel_settings</mat-icon>
+                          class="flex items-center gap-3 px-5 py-3 hover:bg-[#FFF8E1] cursor-pointer transition whitespace-nowrap">
+                          <span class="material-icons text-[20px] text-[#F57C00]">admin_panel_settings</span>
                           <span class="text-[14px] font-semibold text-[#F57C00]">Admin Panel</span>
                         </div>
                       </div>
@@ -132,8 +126,8 @@ interface UserLocation { city: string; state: string; pincode: string; }
                     <!-- Logout -->
                     <div class="border-t border-[#F5F5F5]">
                       <div (click)="onLogout()"
-                        class="flex items-center gap-3 px-5 py-3 hover:bg-[#FFEBEE] cursor-pointer transition">
-                        <mat-icon class="text-[20px] text-[#F44336]">logout</mat-icon>
+                        class="flex items-center gap-3 px-5 py-3 hover:bg-[#FFEBEE] cursor-pointer transition whitespace-nowrap">
+                        <span class="material-icons text-[20px] text-[#F44336]">logout</span>
                         <span class="text-[14px] font-semibold text-[#F44336]">Log Out</span>
                       </div>
                     </div>
@@ -143,7 +137,7 @@ interface UserLocation { city: string; state: string; pincode: string; }
                   <!-- App QR section -->
                   <div class="border-t border-[#F5F5F5] bg-[#FAFAFA] px-5 py-4 flex items-center gap-3">
                     <div class="w-[52px] h-[52px] bg-[#1A1A1A] rounded-[8px] flex-shrink-0 flex items-center justify-center">
-                      <mat-icon class="text-white text-[28px]">qr_code</mat-icon>
+                      <span class="material-icons text-white text-[28px]">qr_code</span>
                     </div>
                     <div>
                       <p class="text-[12px] font-semibold text-[#1A1A1A]">Simple way to get groceries</p>
@@ -185,6 +179,7 @@ export class NavbarComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly elementRef = inject(ElementRef);
 
   readonly isDropdownOpen = signal(false);
   readonly locationLabel = signal('Select Location');
@@ -195,6 +190,14 @@ export class NavbarComponent implements OnInit {
     if (stored) {
       const loc: UserLocation = JSON.parse(stored);
       this.locationLabel.set(loc.city || 'Select Location');
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (!this.elementRef.nativeElement.contains(target)) {
+      this.isDropdownOpen.set(false);
     }
   }
 

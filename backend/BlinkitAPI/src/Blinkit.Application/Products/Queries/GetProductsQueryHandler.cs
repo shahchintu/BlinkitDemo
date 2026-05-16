@@ -17,6 +17,7 @@ public class GetProductsQueryHandler(IBlinkitDbContext db)
             .Include(p => p.Attributes.OrderBy(a => a.DisplayOrder))
             .Include(p => p.Tags)
             .Include(p => p.Images.OrderBy(i => i.DisplayOrder))
+            .Where(p => !p.IsDeleted && p.IsActive)
             .AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(request.Search))
@@ -25,11 +26,41 @@ public class GetProductsQueryHandler(IBlinkitDbContext db)
         if (request.CategoryId.HasValue)
             query = query.Where(p => p.CategoryId == request.CategoryId.Value);
 
+        if (request.MinPrice > 0 || request.MaxPrice < 999999)
+            query = query.Where(p => p.Variants.Any(v =>
+                v.IsActive &&
+                (v.DiscountPrice ?? v.Price) >= request.MinPrice &&
+                (v.DiscountPrice ?? v.Price) <= request.MaxPrice));
+
+        query = request.SortBy switch {
+            "price_asc" => query.OrderBy(p =>
+                p.Variants
+                    .Where(v => v.IsActive)
+                    .OrderBy(v => v.DisplayOrder)
+                    .Select(v => v.DiscountPrice ?? v.Price)
+                    .FirstOrDefault()),
+
+            "price_desc" => query.OrderByDescending(p =>
+                p.Variants
+                    .Where(v => v.IsActive)
+                    .OrderBy(v => v.DisplayOrder)
+                    .Select(v => v.DiscountPrice ?? v.Price)
+                    .FirstOrDefault()),
+
+            "discount" => query.OrderByDescending(p =>
+                p.Variants
+                    .Where(v => v.IsActive && v.DiscountPrice.HasValue)
+                    .OrderBy(v => v.DisplayOrder)
+                    .Select(v => (v.Price - v.DiscountPrice!.Value) / v.Price * 100)
+                    .FirstOrDefault()),
+
+            _ => query.OrderBy(p => p.Name)
+        };
+
         var totalCount = await query.CountAsync(ct);
         var totalPages = (int)Math.Ceiling(totalCount / (double)request.PageSize);
 
         var products = await query
-            .OrderBy(p => p.Name)
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)
             .ToListAsync(ct);
