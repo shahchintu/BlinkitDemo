@@ -22,7 +22,8 @@ const CATEGORY_FALLBACK: Record<string, string> = {
   'ice-cream':         'https://picsum.photos/seed/icecream/200/200',
 };
 
-export function formatPrice(n: number): string {
+export function formatPrice(n: number | undefined | null): string {
+  if (n === undefined || n === null) return '';
   return '₹' + n.toLocaleString('en-IN');
 }
 
@@ -32,7 +33,12 @@ export function formatDiscount(original: number, discounted: number): string {
 }
 
 export function timeAgo(date: string | Date): string {
-  const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+  let dateString = typeof date === 'string' ? date : date.toISOString();
+  // Ensure UTC dates from backend have 'Z' suffix so JS parses them as UTC instead of local
+  if (typeof date === 'string' && !date.endsWith('Z')) {
+    dateString += 'Z';
+  }
+  const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
   if (seconds < 60) return 'just now';
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;

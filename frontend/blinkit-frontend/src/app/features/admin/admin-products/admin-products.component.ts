@@ -7,7 +7,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { AdminService } from '../../../core/services/admin.service';
 import { ImageService } from '../../../core/services/image.service';
 import { ICategory, IProduct } from '../../../core/models';
-import { formatPrice } from '../../../shared/utils';
+import { formatPrice, getCategoryFallback } from '../../../shared/utils';
 
 @Component({
   selector: 'app-admin-products',
@@ -137,7 +137,10 @@ import { formatPrice } from '../../../shared/utils';
         </div>
         @for (product of products(); track product.id) {
           <div class="grid grid-cols-[56px_2fr_1.5fr_1fr_1fr_100px] gap-3 px-4 py-3 border-b border-[#F0F0F0] last:border-0 items-center">
-            <img [src]="productImages()[product.id] || product.imageUrl" [alt]="product.name" class="w-10 h-10 object-contain rounded-lg bg-gray-50 p-0.5" loading="lazy" />
+            <img [src]="productImages()[product.id] || product.imageUrl" [alt]="product.name" 
+              class="w-10 h-10 object-contain rounded-lg bg-gray-50 p-0.5" 
+              loading="lazy"
+              (error)="onImgError($event, product.categoryName)" />
             <div>
               <p class="text-sm font-medium truncate">{{ product.name }}</p>
               <p class="text-xs text-[#666666]">{{ product.variants.length }} variant(s)</p>
@@ -315,5 +318,9 @@ export class AdminProductsComponent implements OnInit {
         this.snackBar.open('✓ Product deleted', '', { duration: 2000 });
       },
     });
+  }
+
+  onImgError(event: Event, category: string): void {
+    (event.target as HTMLImageElement).src = getCategoryFallback(category);
   }
 }

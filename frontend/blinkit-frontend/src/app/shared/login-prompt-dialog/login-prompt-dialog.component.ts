@@ -122,19 +122,10 @@ export class LoginPromptDialogComponent {
 
     this.authService.login(this.form.getRawValue()).subscribe({
       next: () => {
-        this.cartService.mergeGuestCartAfterLogin().subscribe({
-          next: () => {
-            this.submitting.set(false);
-            this.dialogRef.close('loggedIn');
-            this.router.navigate(['/checkout']);
-            this.snackBar.open('✓ Logged in! Your cart is ready.', '', { duration: 3000 });
-          },
-          error: () => {
-            this.submitting.set(false);
-            this.dialogRef.close('loggedIn');
-            this.router.navigate(['/checkout']);
-          },
-        });
+        this.submitting.set(false);
+        this.dialogRef.close('loggedIn');
+        this.router.navigate(['/checkout']);
+        this.snackBar.open('✓ Logged in! Your cart is ready.', '', { duration: 3000 });
       },
       error: (err: { error?: { message?: string } }) => {
         this.submitting.set(false);

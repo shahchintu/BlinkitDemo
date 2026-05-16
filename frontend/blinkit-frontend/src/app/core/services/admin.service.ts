@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { ICategory, ICoupon, IOrder, IProduct, IUser, IPaginatedResult } from '../models';
+import { map, Observable } from 'rxjs';
+import { ICategory, ICoupon, IOrder, IProduct, IUser, IPaginatedResult, IProductVariant } from '../models';
 
 export interface DashboardStats {
   totalOrders: number;
@@ -54,7 +54,56 @@ export class AdminService {
       .set('page', page).set('pageSize', pageSize).set('activeOnly', activeOnly);
     if (search) params = params.set('search', search);
     if (categoryId) params = params.set('categoryId', categoryId);
-    return this.http.get<IPaginatedResult<IProduct>>('/api/admin/products', { params });
+    
+    return this.http.get<any>('/api/admin/products', { params }).pipe(
+      map(res => {
+        const items = res.items || res.Items || [];
+        return {
+          items: items.map((p: any) => this.mapProduct(p)),
+          totalCount: res.totalCount || res.TotalCount || 0,
+          page: res.page || res.Page || page,
+          pageSize: res.pageSize || res.PageSize || pageSize,
+          totalPages: res.totalPages || res.TotalPages || 1
+        };
+      })
+    );
+  }
+
+  private mapProduct(p: any): IProduct {
+    if (!p) return {} as IProduct;
+    const variants = p.variants || p.Variants || [];
+    const defaultVariant = p.defaultVariant || p.DefaultVariant || variants[0] || {};
+    const id = p.id || p.Id || '';
+
+    const mapVariant = (v: any, pid: string): IProductVariant => ({
+      id: v.id || v.Id,
+      productId: pid,
+      unit: v.unit || v.Unit || '',
+      price: v.price || v.Price || 0,
+      discountPrice: v.discountPrice !== undefined ? v.discountPrice : v.DiscountPrice,
+      stockQty: v.stockQty !== undefined ? v.stockQty : (v.StockQty || 0),
+      imageUrl: v.imageUrl || v.ImageUrl || '',
+      displayOrder: v.displayOrder || v.DisplayOrder || 0,
+    });
+
+    return {
+      id,
+      categoryId: p.categoryId || p.CategoryId || '',
+      categoryName: p.categoryName || p.CategoryName || '',
+      name: p.name || p.Name || '',
+      slug: p.slug || p.Slug || '',
+      description: p.description || p.Description || '',
+      isActive: p.isActive !== undefined ? p.isActive : (p.IsActive !== undefined ? p.IsActive : true),
+      price: (defaultVariant.price !== undefined ? defaultVariant.price : defaultVariant.Price) ?? 0,
+      discountPrice: (defaultVariant.discountPrice !== undefined ? defaultVariant.discountPrice : defaultVariant.DiscountPrice) ?? null,
+      stockQty: (defaultVariant.stockQty !== undefined ? defaultVariant.stockQty : defaultVariant.StockQty) ?? 0,
+      unit: defaultVariant.unit || defaultVariant.Unit || '',
+      imageUrl: defaultVariant.imageUrl || defaultVariant.ImageUrl || '',
+      images: (p.images || p.Images || []).length > 0 ? (p.images || p.Images) : [defaultVariant.imageUrl || defaultVariant.ImageUrl].filter(Boolean),
+      variants: variants.map((v: any) => mapVariant(v, id)),
+      attributes: p.attributes || p.Attributes || [],
+      relatedTags: p.relatedTags || p.RelatedTags || [],
+    };
   }
 
   createProduct(req: ProductRequest): Observable<{ id: string }> {

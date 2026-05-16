@@ -17,7 +17,7 @@ import { OrderStatusTrackerComponent } from '../order-status-tracker/order-statu
       <div class="space-y-2 mt-4">
         @for (item of order.items; track item.id) {
           <div class="flex items-center gap-3">
-            <img [src]="item.productImageUrl" [alt]="item.productName"
+            <img [src]="orderImages[item.productId] || item.productImageUrl" [alt]="item.productName"
               class="w-10 h-10 rounded-lg object-contain bg-gray-50 p-1" loading="lazy"
               (error)="onImgError($event)" />
             <div class="flex-1 min-w-0">
@@ -70,6 +70,7 @@ import { OrderStatusTrackerComponent } from '../order-status-tracker/order-statu
 })
 export class OrderDetailComponent {
   @Input({ required: true }) order!: IOrder;
+  @Input() orderImages: Record<string, string> = {};
 
   fmt = formatPrice;
 

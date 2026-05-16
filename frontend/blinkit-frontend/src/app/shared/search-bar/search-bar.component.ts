@@ -1,6 +1,6 @@
 import {
   ChangeDetectionStrategy, Component, ElementRef, HostListener,
-  inject, OnDestroy, OnInit, signal,
+  inject, OnDestroy, OnInit, signal, effect,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -8,6 +8,7 @@ import { Subject, debounceTime, distinctUntilChanged, switchMap, of, catchError 
 import { ProductService } from '../../core/services/product.service';
 import { IProduct } from '../../core/models';
 import { formatPrice, getCategoryFallback } from '../utils';
+import { ImageService } from '../../core/services/image.service';
 
 @Component({
   selector: 'app-search-bar',
@@ -65,7 +66,7 @@ import { formatPrice, getCategoryFallback } from '../utils';
                 >
                   <div class="w-10 h-10 rounded-lg bg-gray-50 border border-[#E0E0E0] flex-shrink-0 overflow-hidden">
                     <img
-                      [src]="product.imageUrl"
+                      [src]="productImages()[product.id] || product.imageUrl"
                       [alt]="product.name"
                       class="w-full h-full object-contain p-0.5"
                       loading="lazy"
@@ -97,10 +98,24 @@ export class SearchBarComponent implements OnInit, OnDestroy {
 
   query = '';
   readonly results = signal<IProduct[]>([]);
+  readonly productImages = signal<Record<string, string>>({});
   readonly loading = signal(false);
   readonly open = signal(false);
   readonly skeletons = Array(4);
   readonly formatPrice = formatPrice;
+
+  constructor() {
+    const is = inject(ImageService);
+    effect(() => {
+      this.results().forEach(p => {
+        if (!this.productImages()[p.id]) {
+          is.getProductImage(p.name, p.categoryName, p.id).subscribe(url => {
+            if (url) this.productImages.update(prev => ({ ...prev, [p.id]: url }));
+          });
+        }
+      });
+    });
+  }
 
   ngOnInit(): void {
     this.search$.pipe(

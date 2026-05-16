@@ -64,7 +64,7 @@ export class CartService {
   constructor() {
     effect(() => {
       if (this.authStore.isAuthenticated()) {
-        this.mergeGuestCartAfterLogin().subscribe();
+        this.loadCart().subscribe();
       } else {
         const guestItems = this.readGuestItems();
         this.cartStore.setItems(guestItems);
@@ -200,8 +200,8 @@ export class CartService {
   mergeGuestCartAfterLogin(): Observable<void> {
     let guestItems: ICartItem[];
     try {
-      guestItems = JSON.parse(localStorage.getItem('guestCart') ?? '[]');
-      localStorage.removeItem('guestCart');
+      guestItems = JSON.parse(localStorage.getItem('guest_cart') ?? '[]');
+      localStorage.removeItem('guest_cart');
     } catch {
       guestItems = [];
     }
@@ -245,7 +245,7 @@ export class CartService {
 
   private readGuestItems(): ICartItem[] {
     try {
-      return JSON.parse(localStorage.getItem('guestCart') ?? '[]');
+      return JSON.parse(localStorage.getItem('guest_cart') ?? '[]');
     } catch {
       return [];
     }
@@ -253,7 +253,7 @@ export class CartService {
 
   private syncGuest(items: ICartItem[]): void {
     try {
-      localStorage.setItem('guestCart', JSON.stringify(items));
+      localStorage.setItem('guest_cart', JSON.stringify(items));
     } catch { }
     this.cartStore.setItems(items);
     this.cartSubject.next(this.guestItemsToCartDto(items));

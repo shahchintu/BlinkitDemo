@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { catchError, finalize, Observable, of, switchMap, tap, timeout } from 'rxjs';
 import { IAuthResponse, ILoginRequest, IRegisterRequest, IUser } from '../models';
 import { AuthStore } from '../stores/auth.store';
+import { CartService } from './cart.service';
 
 /**
  * Handles all authentication API calls.
@@ -20,6 +21,7 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly authStore = inject(AuthStore);
   private readonly router = inject(Router);
+  private readonly cartService = inject(CartService);
 
   register(req: IRegisterRequest): Observable<void> {
     return this.http.post<void>('/api/auth/register', req);
@@ -28,7 +30,7 @@ export class AuthService {
   login(req: ILoginRequest): Observable<void> {
     return this.http.post<IAuthResponse>('/api/auth/login', req).pipe(
       tap(res => this.authStore.setAuth(res.user, res.accessToken)),
-      switchMap(() => new Observable<void>(obs => { obs.next(); obs.complete(); }))
+      switchMap(() => this.cartService.mergeGuestCartAfterLogin())
     );
   }
 

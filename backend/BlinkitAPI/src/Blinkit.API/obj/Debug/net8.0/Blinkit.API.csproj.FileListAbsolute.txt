@@ -175,9 +175,3 @@ H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.API\obj\D
 H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.API\obj\Debug\net8.0\Blinkit.API.csproj.CopyComplete
 H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.API\obj\Debug\net8.0\Blinkit.API.genruntimeconfig.cache
 H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.API\obj\Debug\net8.0\ref\Blinkit.API.dll
-H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.API\obj\Debug\net8.0\rpswa.dswa.cache.json
-H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.API\obj\Debug\net8.0\rjimswa.dswa.cache.json
-H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.API\obj\Debug\net8.0\rjsmrazor.dswa.cache.json
-H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.API\obj\Debug\net8.0\rjsmcshtml.dswa.cache.json
-H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.API\obj\Debug\net8.0\staticwebassets.build.json.cache
-H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.API\obj\Debug\net8.0\staticwebassets.build.endpoints.json

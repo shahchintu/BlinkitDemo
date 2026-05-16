@@ -132,7 +132,7 @@ const STATUS_MAP: Record<string, StatusInfo> = {
                 @if (expandedId() === order.id) {
                   <div class="border-t border-[#F2F2F2] px-5 py-4">
                     @if (detailOrder()) {
-                      <app-order-detail [order]="detailOrder()!" />
+                      <app-order-detail [order]="detailOrder()!" [orderImages]="orderImages()" />
                     } @else {
                       <div class="animate-pulse space-y-2">
                         <div class="h-3 bg-gray-200 rounded w-full"></div>

@@ -99,11 +99,11 @@ import { formatPrice, getCategoryFallback } from '../../../shared/utils';
               @for (item of cartStore.cartItems(); track item.id) {
                 <div class="flex items-start gap-3 px-4 py-3">
                   <img
-                    [src]="cartItemImages()[item.productId] || item.variant.imageUrl"
+                    [src]="productImages()[item.productId] || item.variant.imageUrl"
                     [alt]="item.product.name"
                     loading="lazy"
                     class="w-16 h-16 object-contain flex-shrink-0 rounded-[8px] bg-[#F8F8F8] p-1"
-                    (error)="onImgError($event)"
+                    (error)="onImgError($event, item.product.categoryName)"
                   />
                   <div class="flex-1 min-w-0">
                     <p class="text-[14px] font-semibold text-[#1A1A1A] line-clamp-1">{{ item.product.name }}</p>
@@ -181,11 +181,11 @@ import { formatPrice, getCategoryFallback } from '../../../shared/utils';
                       class="flex-shrink-0 w-28 bg-[#F8F8F8] rounded-xl p-2 hover:shadow-md transition-shadow"
                     >
                       <img
-                        [src]="rp.imageUrl"
+                        [src]="productImages()[rp.id] || rp.imageUrl"
                         [alt]="rp.name"
                         loading="lazy"
                         class="w-full h-16 object-contain mb-1"
-                        (error)="onImgError($event)"
+                        (error)="onImgError($event, rp.categoryName)"
                       />
                       <p class="text-[10px] text-gray-700 line-clamp-2 leading-tight">{{ rp.name }}</p>
                       <p class="text-xs font-bold text-[#0C831F] mt-0.5">
@@ -260,22 +260,29 @@ export class CartSidebarComponent implements OnInit {
   readonly appliedCoupon = signal<ICouponValidation | null>(null);
   readonly couponError = signal('');
   readonly relatedProducts = signal<IProduct[]>([]);
-  readonly cartItemImages = signal<Record<string, string>>({});
+  readonly productImages = signal<Record<string, string>>({});
 
   constructor() {
     effect(() => {
+      // Cart items
       this.cartStore.cartItems().forEach(item => {
-        if (!this.cartItemImages()[item.productId]) {
-          this.imageService.getProductImage(
-            item.product.name,
-            item.product.categoryName,
-            item.productId,
-          ).subscribe(url => {
-            this.cartItemImages.update(imgs => ({ ...imgs, [item.productId]: url }));
-          });
-        }
+        this.fetchImageIfNeeded(item.product.name, item.product.categoryName, item.productId);
+      });
+      // Related products
+      this.relatedProducts().forEach(rp => {
+        this.fetchImageIfNeeded(rp.name, rp.categoryName, rp.id);
       });
     });
+  }
+
+  private fetchImageIfNeeded(name: string, category: string, id: string) {
+    if (!this.productImages()[id]) {
+      this.imageService.getProductImage(name, category, id).subscribe(url => {
+        if (url) {
+          this.productImages.update(imgs => ({ ...imgs, [id]: url }));
+        }
+      });
+    }
   }
 
   ngOnInit(): void {
@@ -355,7 +362,7 @@ export class CartSidebarComponent implements OnInit {
     this.router.navigate(['/checkout']);
   }
 
-  onImgError(event: Event): void {
-    (event.target as HTMLImageElement).src = getCategoryFallback('snacks');
+  onImgError(event: Event, category: string): void {
+    (event.target as HTMLImageElement).src = getCategoryFallback(category);
   }
 }
