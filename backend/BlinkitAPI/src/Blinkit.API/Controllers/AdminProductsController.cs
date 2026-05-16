@@ -26,7 +26,7 @@ public sealed class AdminProductsController(ISender sender) : ControllerBase
     {
         var id = await sender.Send(new CreateProductCommand(
             req.Name, req.CategoryId, req.Description,
-            req.Variants.Select(v => new VariantInput(v.Unit, v.Price, v.DiscountPrice, v.StockQty, v.ImageUrl, v.DisplayOrder)).ToList(),
+            req.Variants.Select(v => new VariantInput(v.Id, v.Unit, v.Price, v.DiscountPrice, v.StockQty, v.ImageUrl, v.DisplayOrder)).ToList(),
             req.Attributes.Select(a => new AttributeInput(a.Key, a.Value)).ToList(),
             req.Tags, req.Images), ct);
         return CreatedAtAction(nameof(GetAll), new { id }, new { id });
@@ -37,7 +37,7 @@ public sealed class AdminProductsController(ISender sender) : ControllerBase
     {
         await sender.Send(new UpdateProductCommand(
             id, req.Name, req.CategoryId, req.Description,
-            req.Variants.Select(v => new VariantInput(v.Unit, v.Price, v.DiscountPrice, v.StockQty, v.ImageUrl, v.DisplayOrder)).ToList(),
+            req.Variants.Select(v => new VariantInput(v.Id, v.Unit, v.Price, v.DiscountPrice, v.StockQty, v.ImageUrl, v.DisplayOrder)).ToList(),
             req.Attributes.Select(a => new AttributeInput(a.Key, a.Value)).ToList(),
             req.Tags, req.Images), ct);
         return Ok();
@@ -69,7 +69,7 @@ public sealed class AdminProductsController(ISender sender) : ControllerBase
     public async Task<IActionResult> AddVariant(Guid productId, [FromBody] VariantRequest req, CancellationToken ct)
     {
         var id = await sender.Send(new AddVariantCommand(productId,
-            new VariantInput(req.Unit, req.Price, req.DiscountPrice, req.StockQty, req.ImageUrl, req.DisplayOrder)), ct);
+            new VariantInput(req.Id, req.Unit, req.Price, req.DiscountPrice, req.StockQty, req.ImageUrl, req.DisplayOrder)), ct);
         return CreatedAtAction(nameof(GetVariants), new { productId }, new { id });
     }
 
@@ -77,7 +77,7 @@ public sealed class AdminProductsController(ISender sender) : ControllerBase
     public async Task<IActionResult> UpdateVariant(Guid productId, Guid variantId, [FromBody] VariantRequest req, CancellationToken ct)
     {
         await sender.Send(new UpdateVariantCommand(variantId,
-            new VariantInput(req.Unit, req.Price, req.DiscountPrice, req.StockQty, req.ImageUrl, req.DisplayOrder)), ct);
+            new VariantInput(req.Id, req.Unit, req.Price, req.DiscountPrice, req.StockQty, req.ImageUrl, req.DisplayOrder)), ct);
         return Ok();
     }
 
@@ -97,7 +97,7 @@ public sealed class AdminProductsController(ISender sender) : ControllerBase
     }
 }
 
-public record VariantRequest(string Unit, decimal Price, decimal? DiscountPrice, int StockQty, string ImageUrl, int DisplayOrder);
+public record VariantRequest(Guid? Id, string Unit, decimal Price, decimal? DiscountPrice, int StockQty, string ImageUrl, int DisplayOrder);
 public record AttributeRequest(string Key, string Value);
 public record CreateProductRequest(
     string Name, Guid CategoryId, string Description,

@@ -21,6 +21,7 @@ export interface AdminUserDto {
 }
 
 export interface VariantInput {
+  id?: string;
   unit: string;
   price: number;
   discountPrice: number | null;

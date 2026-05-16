@@ -239,11 +239,12 @@ export class AdminProductsComponent implements OnInit {
 
   newVariantGroup(): FormGroup {
     return new FormGroup({
+      id: new FormControl<string | null>(null),
       unit: new FormControl('', Validators.required),
       price: new FormControl(0, [Validators.required, Validators.min(1)]),
       discountPrice: new FormControl<number | null>(null),
       stockQty: new FormControl(0, [Validators.required, Validators.min(0)]),
-      imageUrl: new FormControl('', Validators.required),
+      imageUrl: new FormControl(''),
     });
   }
 
@@ -269,7 +270,7 @@ export class AdminProductsComponent implements OnInit {
       this.variantsArray.clear();
       product.variants.forEach(v => {
         const g = this.newVariantGroup();
-        g.patchValue({ unit: v.unit, price: v.price, discountPrice: v.discountPrice, stockQty: v.stockQty, imageUrl: v.imageUrl });
+        g.patchValue({ id: v.id, unit: v.unit, price: v.price, discountPrice: v.discountPrice, stockQty: v.stockQty, imageUrl: v.imageUrl });
         this.variantsArray.push(g);
       });
       this.imageService.getProductImage(product.name, product.categoryName, product.id)
@@ -281,7 +282,11 @@ export class AdminProductsComponent implements OnInit {
   closeForm(): void { this.showForm.set(false); this.editingId.set(null); this.previewImageUrl.set(''); }
 
   saveProduct(): void {
-    if (this.productForm.invalid) return;
+    if (this.productForm.invalid) {
+      console.error('Form invalid:', this.productForm.errors, this.productForm.value);
+      this.snackBar.open('× Please fill all required fields correctly', '', { duration: 3000 });
+      return;
+    }
     this.saving.set(true);
     const v = this.productForm.value;
     const req = {
@@ -291,8 +296,16 @@ export class AdminProductsComponent implements OnInit {
       tags: (v.tags ?? '').split(',').map((t: string) => t.trim()).filter(Boolean),
       images: (v.images ?? '').split(',').map((u: string) => u.trim()).filter(Boolean),
       attributes: [],
-      variants: (v.variants as {unit:string;price:number;discountPrice:number|null;stockQty:number;imageUrl:string}[])
-        .map((vv, i) => ({ ...vv, displayOrder: i + 1 })),
+      variants: (v.variants as {id: string | null; unit:string;price:number;discountPrice:number|null;stockQty:number;imageUrl:string}[])
+        .map((vv, i) => ({ 
+          id: vv.id || undefined,
+          unit: vv.unit,
+          price: vv.price,
+          discountPrice: vv.discountPrice,
+          stockQty: vv.stockQty,
+          imageUrl: vv.imageUrl || (v.images ?? '').split(',')[0]?.trim() || '',
+          displayOrder: i + 1 
+        })),
     };
 
     const id = this.editingId();
@@ -302,7 +315,11 @@ export class AdminProductsComponent implements OnInit {
       this.load();
       this.snackBar.open(id ? '✓ Product updated' : '✓ Product created', '', { duration: 2000 });
     };
-    const fail = () => this.saving.set(false);
+    const fail = (err: any) => {
+      this.saving.set(false);
+      console.error('Save failed:', err);
+      this.snackBar.open('× Failed to save product. Please try again.', '', { duration: 3000 });
+    };
     if (id) {
       this.adminService.updateProduct(id, req).subscribe({ next: done, error: fail });
     } else {
