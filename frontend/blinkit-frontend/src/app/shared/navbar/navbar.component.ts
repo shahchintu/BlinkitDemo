@@ -61,99 +61,94 @@ interface UserLocation { city: string; state: string; pincode: string; }
             <!-- Logged in: Account dropdown -->
             <div class="relative">
 
-              <!-- Click-outside overlay -->
-              @if (dropdownOpen()) {
-                <div class="fixed inset-0 z-40" (click)="dropdownOpen.set(false)"></div>
+              <!-- Click-outside backdrop -->
+              @if (isDropdownOpen()) {
+                <div class="fixed inset-0 z-[99]" (click)="closeDropdown()"></div>
               }
 
               <!-- Account trigger button -->
               <button
-                class="flex items-center gap-1 text-[#1A1A1A] font-semibold text-[15px] hover:text-[#0C831F] transition-colors py-1"
-                (click)="dropdownOpen.set(!dropdownOpen())"
+                class="flex items-center gap-1.5 cursor-pointer hover:text-[#0C831F] transition"
+                (click)="toggleDropdown()"
               >
-                Account
-                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M7 10l5 5 5-5z"/>
-                </svg>
+                <span class="text-[15px] font-semibold text-[#1A1A1A]">Account</span>
+                <mat-icon class="text-[18px] leading-none text-[#666666]">expand_more</mat-icon>
               </button>
 
               <!-- Dropdown panel -->
-              @if (dropdownOpen()) {
-                <div class="absolute right-0 top-full mt-1 bg-white rounded-[12px] shadow-[0_8px_32px_rgba(0,0,0,0.15)] border border-[#E0E0E0] w-[300px] z-50 py-2 overflow-hidden">
+              @if (isDropdownOpen()) {
+                <div class="absolute right-0 top-[calc(100%+8px)] bg-white rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.15)] border border-[#F0F0F0] w-[280px] z-[100] overflow-hidden">
 
                   <!-- User info -->
-                  <div class="px-5 py-4 border-b border-[#F2F2F2]">
-                    <p class="text-[16px] font-bold text-[#1A1A1A]">{{ authStore.currentUser()?.fullName }}</p>
-                    <p class="text-[13px] text-[#666666] mt-0.5">{{ authStore.currentUser()?.email }}</p>
+                  <div class="px-5 py-4 border-b border-[#F5F5F5]">
+                    <p class="text-[16px] font-bold text-[#1A1A1A] truncate">{{ currentUser()?.fullName }}</p>
+                    <p class="text-[13px] text-[#666666] truncate mt-0.5">{{ currentUser()?.email }}</p>
                   </div>
 
                   <!-- Menu items -->
-                  <a routerLink="/orders"
-                    class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] text-[14px] text-[#1A1A1A] transition-colors"
-                    (click)="dropdownOpen.set(false)">
-                    <mat-icon class="text-[20px] text-[#666666]">shopping_bag</mat-icon>
-                    My Orders
-                  </a>
+                  <div class="py-1">
 
-                  <a routerLink="/account/addresses"
-                    class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] text-[14px] text-[#1A1A1A] transition-colors"
-                    (click)="dropdownOpen.set(false)">
-                    <mat-icon class="text-[20px] text-[#666666]">location_on</mat-icon>
-                    Saved Addresses
-                  </a>
-
-                  <a routerLink="/account/blinkit-plus"
-                    class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] text-[14px] text-[#1A1A1A] transition-colors"
-                    (click)="dropdownOpen.set(false)">
-                    <mat-icon class="text-[20px] text-[#666666]">star_border</mat-icon>
-                    Blinkit Plus
-                  </a>
-
-                  <a routerLink="/help"
-                    class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] text-[14px] text-[#1A1A1A] transition-colors"
-                    (click)="dropdownOpen.set(false)">
-                    <mat-icon class="text-[20px] text-[#666666]">help_outline</mat-icon>
-                    FAQ's
-                  </a>
-
-                  <a routerLink="/account"
-                    class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] text-[14px] text-[#1A1A1A] transition-colors"
-                    (click)="dropdownOpen.set(false)">
-                    <mat-icon class="text-[20px] text-[#666666]">lock_outline</mat-icon>
-                    Account Privacy
-                  </a>
-
-                  <!-- Admin Panel — only for Admin role -->
-                  @if (authStore.currentUser()?.role === 'Admin') {
-                    <div class="border-t border-[#F2F2F2] mt-1 pt-1">
-                      <button
-                        class="flex items-center gap-3 px-5 py-3 hover:bg-[#FFF8E1] text-[14px] w-full text-left transition-colors"
-                        (click)="goAdmin()">
-                        <mat-icon class="text-[20px] text-[#F57C00]">admin_panel_settings</mat-icon>
-                        <span class="font-semibold text-[#F57C00]">Admin Panel</span>
-                      </button>
+                    <div (click)="navigate('/orders')"
+                      class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] cursor-pointer transition">
+                      <mat-icon class="text-[20px] text-[#666666]">shopping_bag</mat-icon>
+                      <span class="text-[14px] text-[#1A1A1A] font-medium">My Orders</span>
                     </div>
-                  }
 
-                  <!-- Logout -->
-                  <div class="border-t border-[#F2F2F2] mt-1 pt-1">
-                    <button
-                      class="flex items-center gap-3 px-5 py-3 hover:bg-[#FFEBEE] text-[14px] text-[#F44336] w-full text-left transition-colors"
-                      (click)="onLogout()">
-                      <mat-icon class="text-[20px] text-[#F44336]">logout</mat-icon>
-                      Log Out
-                    </button>
+                    <div (click)="navigate('/account/addresses')"
+                      class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] cursor-pointer transition">
+                      <mat-icon class="text-[20px] text-[#666666]">location_on</mat-icon>
+                      <span class="text-[14px] text-[#1A1A1A] font-medium">Saved Addresses</span>
+                    </div>
+
+                    <div (click)="navigate('/account/blinkit-plus')"
+                      class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] cursor-pointer transition">
+                      <mat-icon class="text-[20px] text-[#F8C200]">star</mat-icon>
+                      <span class="text-[14px] text-[#1A1A1A] font-medium">Blinkit Plus</span>
+                    </div>
+
+                    <div (click)="navigate('/help')"
+                      class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] cursor-pointer transition">
+                      <mat-icon class="text-[20px] text-[#666666]">help_outline</mat-icon>
+                      <span class="text-[14px] text-[#1A1A1A] font-medium">FAQ's</span>
+                    </div>
+
+                    <div (click)="navigate('/account')"
+                      class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] cursor-pointer transition">
+                      <mat-icon class="text-[20px] text-[#666666]">lock_outline</mat-icon>
+                      <span class="text-[14px] text-[#1A1A1A] font-medium">Account Privacy</span>
+                    </div>
+
+                    <!-- Admin Panel — only for Admin role -->
+                    @if (currentUser()?.role === 'Admin') {
+                      <div class="border-t border-[#F5F5F5]">
+                        <div (click)="navigate('/admin')"
+                          class="flex items-center gap-3 px-5 py-3 hover:bg-[#FFF8E1] cursor-pointer transition">
+                          <mat-icon class="text-[20px] text-[#F57C00]">admin_panel_settings</mat-icon>
+                          <span class="text-[14px] font-semibold text-[#F57C00]">Admin Panel</span>
+                        </div>
+                      </div>
+                    }
+
+                    <!-- Logout -->
+                    <div class="border-t border-[#F5F5F5]">
+                      <div (click)="onLogout()"
+                        class="flex items-center gap-3 px-5 py-3 hover:bg-[#FFEBEE] cursor-pointer transition">
+                        <mat-icon class="text-[20px] text-[#F44336]">logout</mat-icon>
+                        <span class="text-[14px] font-semibold text-[#F44336]">Log Out</span>
+                      </div>
+                    </div>
+
                   </div>
 
                   <!-- App QR section -->
-                  <div class="px-5 py-4 border-t border-[#F2F2F2] bg-[#F8F8F8] rounded-b-[12px] flex items-center gap-3">
-                    <div class="w-12 h-12 bg-[#1A1A1A] rounded-[6px] flex items-center justify-center flex-shrink-0">
-                      <span class="text-white text-[10px] font-bold">QR</span>
+                  <div class="border-t border-[#F5F5F5] bg-[#FAFAFA] px-5 py-4 flex items-center gap-3">
+                    <div class="w-[52px] h-[52px] bg-[#1A1A1A] rounded-[8px] flex-shrink-0 flex items-center justify-center">
+                      <mat-icon class="text-white text-[28px]">qr_code</mat-icon>
                     </div>
                     <div>
                       <p class="text-[12px] font-semibold text-[#1A1A1A]">Simple way to get groceries</p>
                       <p class="text-[12px] font-semibold text-[#0C831F]">at your doorstep</p>
-                      <p class="text-[11px] text-[#666666]">Scan QR and download blinkit app</p>
+                      <p class="text-[11px] text-[#999999] mt-0.5">Scan QR and download blinkit app</p>
                     </div>
                   </div>
 
@@ -191,8 +186,9 @@ export class NavbarComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
 
-  readonly dropdownOpen = signal(false);
+  readonly isDropdownOpen = signal(false);
   readonly locationLabel = signal('Select Location');
+  readonly currentUser = this.authStore.currentUser;
 
   ngOnInit(): void {
     const stored = localStorage.getItem('userLocation');
@@ -202,9 +198,17 @@ export class NavbarComponent implements OnInit {
     }
   }
 
-  goAdmin(): void {
-    this.dropdownOpen.set(false);
-    this.router.navigate(['/admin']);
+  toggleDropdown(): void {
+    this.isDropdownOpen.update(v => !v);
+  }
+
+  closeDropdown(): void {
+    this.isDropdownOpen.set(false);
+  }
+
+  navigate(path: string): void {
+    this.router.navigate([path]);
+    this.closeDropdown();
   }
 
   openLocationSelector(): void {
@@ -223,7 +227,7 @@ export class NavbarComponent implements OnInit {
   }
 
   onLogout(): void {
-    this.dropdownOpen.set(false);
+    this.closeDropdown();
     this.authService.logout().subscribe();
   }
 }

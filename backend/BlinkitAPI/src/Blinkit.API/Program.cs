@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -61,6 +62,11 @@ builder.Services.AddScoped<IUnsplashService, UnsplashService>();
 builder.Services.AddScoped<IBlinkitDbContext>(sp => sp.GetRequiredService<BlinkitDbContext>());
 
 builder.Services.AddHttpClient("Unsplash");
+builder.Services.AddHttpClient("Pexels");
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
+    ConnectionMultiplexer.Connect(
+        builder.Configuration["Redis:ConnectionString"] ?? "localhost:6379"));
 
 // Resend email
 builder.Services.AddOptions<ResendClientOptions>()

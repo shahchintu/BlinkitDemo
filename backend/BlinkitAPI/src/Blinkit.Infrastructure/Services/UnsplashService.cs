@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Blinkit.Application.Interfaces;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
@@ -13,7 +12,8 @@ public class UnsplashService(
     IDistributedCache cache,
     ILogger<UnsplashService> logger) : IUnsplashService
 {
-    private const string BaseUrl = "https://api.unsplash.com/search/photos";
+    private const string UnsplashBaseUrl = "https://api.unsplash.com/search/photos";
+    private const string PexelsBaseUrl   = "https://api.pexels.com/v1/search";
 
     private static readonly DistributedCacheEntryOptions CacheTtl = new()
     {
@@ -22,21 +22,21 @@ public class UnsplashService(
 
     private static readonly Dictionary<string, string> CategoryQueries = new()
     {
-        { "Fruits & Vegetables", "fresh fruits vegetables colorful" },
-        { "Dairy & Eggs",        "milk dairy eggs fresh" },
-        { "Snacks",              "chips snacks crisps" },
-        { "Beverages",           "cold drinks beverage bottle" },
-        { "Bakery",              "fresh bread bakery baked" },
-        { "Meat & Fish",         "fresh meat chicken fish" },
-        { "Personal Care",       "shampoo soap personal care" },
-        { "Household",           "cleaning products household" },
-        { "Baby Care",           "baby products care soft" },
-        { "Pet Care",            "dog cat pet food" },
-        { "Pharma & Wellness",   "medicine pharmacy health" },
-        { "Beauty & Skin",       "beauty skincare cosmetics" },
-        { "Frozen Foods",        "frozen food ice cream" },
-        { "Breakfast & Cereals", "cereal oats breakfast" },
-        { "Electronics",         "electronics gadgets tech" },
+        { "Fruits & Vegetables", "fresh colorful vegetables fruits market" },
+        { "Dairy & Eggs",        "dairy products milk eggs fresh" },
+        { "Snacks",              "snacks chips crackers variety" },
+        { "Beverages",           "beverages drinks bottles colorful" },
+        { "Bakery",              "fresh bakery bread pastry" },
+        { "Meat & Fish",         "fresh fish seafood market" },
+        { "Personal Care",       "personal care products bathroom" },
+        { "Household",           "household cleaning products" },
+        { "Baby Care",           "baby care products gentle" },
+        { "Pet Care",            "pet food dog cat supplies" },
+        { "Pharma & Wellness",   "medicine health pharmacy" },
+        { "Beauty & Skin",       "beauty products cosmetics skincare" },
+        { "Frozen Foods",        "frozen food packaging ice" },
+        { "Breakfast & Cereals", "breakfast cereal bowl morning" },
+        { "Electronics",         "electronics accessories gadgets" },
     };
 
     private static readonly Dictionary<string, string> FallbackColors = new()
@@ -72,23 +72,46 @@ public class UnsplashService(
             logger.LogWarning(ex, "Redis unavailable for cache read");
         }
 
+        // 1. Try Pexels (primary)
+        var pexelsKey = configuration["Pexels:ApiKey"];
+        if (!string.IsNullOrWhiteSpace(pexelsKey))
+        {
+            try
+            {
+                var url = await FetchFromPexelsAsync(query, seed, pexelsKey);
+                if (url is not null)
+                {
+                    await TryCacheAsync(cacheKey, url);
+                    return url;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Pexels API call failed for query '{Query}'", query);
+            }
+        }
+
+        // 2. Try Unsplash (secondary)
         var accessKey = configuration["Unsplash:AccessKey"];
-        if (string.IsNullOrWhiteSpace(accessKey))
-            return GetFallback(query);
-
-        try
+        if (!string.IsNullOrWhiteSpace(accessKey))
         {
-            var url = await FetchFromUnsplashAsync(query, seed, perPage: 10);
-            if (url is null) return GetFallback(query);
+            try
+            {
+                var url = await FetchFromUnsplashAsync(query, seed, perPage: 10);
+                if (url is not null)
+                {
+                    await TryCacheAsync(cacheKey, url);
+                    return url;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Unsplash API call failed for query '{Query}'", query);
+            }
+        }
 
-            await TryCacheAsync(cacheKey, url);
-            return url;
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Unsplash API call failed for query '{Query}'", query);
-            return GetFallback(query);
-        }
+        // 3. DummyJSON fallback
+        return GetFallback(query);
     }
 
     public async Task<List<string>> GetGalleryUrlsAsync(string query, string seed, int count)
@@ -106,29 +129,50 @@ public class UnsplashService(
             logger.LogWarning(ex, "Redis unavailable for gallery cache read");
         }
 
+        // 1. Try Pexels (primary)
+        var pexelsKey = configuration["Pexels:ApiKey"];
+        if (!string.IsNullOrWhiteSpace(pexelsKey))
+        {
+            try
+            {
+                var urls = await FetchGalleryFromPexelsAsync(query, seed, count, pexelsKey);
+                if (urls.Count > 0)
+                {
+                    await TryCacheAsync(cacheKey, JsonSerializer.Serialize(urls));
+                    return urls;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Pexels gallery call failed for query '{Query}'", query);
+            }
+        }
+
+        // 2. Try Unsplash (secondary)
         var accessKey = configuration["Unsplash:AccessKey"];
-        if (string.IsNullOrWhiteSpace(accessKey))
-            return Enumerable.Range(0, count).Select(_ => GetFallback(query)).ToList();
-
-        try
+        if (!string.IsNullOrWhiteSpace(accessKey))
         {
-            var results = await FetchResultsAsync(query, perPage: 30);
-            if (results.Count == 0)
-                return Enumerable.Range(0, count).Select(_ => GetFallback(query)).ToList();
-
-            var baseIndex = Math.Abs(seed.GetHashCode());
-            var urls = Enumerable.Range(0, count)
-                .Select(i => results[(baseIndex + i) % results.Count].Urls.Regular)
-                .ToList();
-
-            await TryCacheAsync(cacheKey, JsonSerializer.Serialize(urls));
-            return urls;
+            try
+            {
+                var results = await FetchUnsplashResultsAsync(query, perPage: 30);
+                if (results.Count > 0)
+                {
+                    var baseIndex = Math.Abs(seed.GetHashCode());
+                    var urls = Enumerable.Range(0, count)
+                        .Select(i => results[(baseIndex + i) % results.Count].Urls.Regular)
+                        .ToList();
+                    await TryCacheAsync(cacheKey, JsonSerializer.Serialize(urls));
+                    return urls;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Unsplash gallery call failed for query '{Query}'", query);
+            }
         }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Unsplash gallery call failed for query '{Query}'", query);
-            return Enumerable.Range(0, count).Select(_ => GetFallback(query)).ToList();
-        }
+
+        // 3. DummyJSON fallback
+        return Enumerable.Range(0, count).Select(_ => GetFallback(query)).ToList();
     }
 
     public Task<string> GetCategoryImageUrlAsync(string categoryName, string seed)
@@ -137,20 +181,61 @@ public class UnsplashService(
         return GetImageUrlAsync(q, seed);
     }
 
+    // ── Pexels ────────────────────────────────────────────────────────────────
+
+    private async Task<string?> FetchFromPexelsAsync(string query, string seed, string apiKey)
+    {
+        var photos = await FetchPexelsPhotosAsync(query, perPage: 15, apiKey);
+        if (photos.Count == 0) return null;
+        var index = Math.Abs(seed.GetHashCode()) % photos.Count;
+        return photos[index].Src.Medium;
+    }
+
+    private async Task<List<string>> FetchGalleryFromPexelsAsync(
+        string query, string seed, int count, string apiKey)
+    {
+        var photos = await FetchPexelsPhotosAsync(query, perPage: 30, apiKey);
+        if (photos.Count == 0) return [];
+        var baseIndex = Math.Abs(seed.GetHashCode());
+        return Enumerable.Range(0, count)
+            .Select(i => photos[(baseIndex + i) % photos.Count].Src.Medium)
+            .ToList();
+    }
+
+    private async Task<List<PexelsPhoto>> FetchPexelsPhotosAsync(
+        string query, int perPage, string apiKey)
+    {
+        var client = httpClientFactory.CreateClient("Pexels");
+        var requestUrl =
+            $"{PexelsBaseUrl}?query={Uri.EscapeDataString(query)}&per_page={perPage}&orientation=square";
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+        request.Headers.Add("Authorization", apiKey);
+
+        using var response = await client.SendAsync(request);
+        if (!response.IsSuccessStatusCode) return [];
+
+        var json = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<PexelsSearchResult>(json, JsonOptions);
+        return result?.Photos ?? [];
+    }
+
+    // ── Unsplash ───────────────────────────────────────────────────────────────
+
     private async Task<string?> FetchFromUnsplashAsync(string query, string seed, int perPage)
     {
-        var results = await FetchResultsAsync(query, perPage);
+        var results = await FetchUnsplashResultsAsync(query, perPage);
         if (results.Count == 0) return null;
-
         var index = Math.Abs(seed.GetHashCode()) % results.Count;
         return results[index].Urls.Regular;
     }
 
-    private async Task<List<UnsplashPhoto>> FetchResultsAsync(string query, int perPage)
+    private async Task<List<UnsplashPhoto>> FetchUnsplashResultsAsync(string query, int perPage)
     {
         var accessKey = configuration["Unsplash:AccessKey"]!;
         var client = httpClientFactory.CreateClient("Unsplash");
-        var requestUrl = $"{BaseUrl}?query={Uri.EscapeDataString(query)}&per_page={perPage}&orientation=squarish";
+        var requestUrl =
+            $"{UnsplashBaseUrl}?query={Uri.EscapeDataString(query)}&per_page={perPage}&orientation=squarish";
 
         using var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
         request.Headers.Add("Authorization", $"Client-ID {accessKey}");
@@ -162,6 +247,8 @@ public class UnsplashService(
         var result = JsonSerializer.Deserialize<UnsplashSearchResult>(json, JsonOptions);
         return result?.Results ?? [];
     }
+
+    // ── Cache helper ───────────────────────────────────────────────────────────
 
     private async Task TryCacheAsync(string key, string value)
     {
@@ -189,6 +276,25 @@ public class UnsplashService(
     {
         PropertyNameCaseInsensitive = true,
     };
+
+    // ── Pexels models ──────────────────────────────────────────────────────────
+
+    private sealed class PexelsSearchResult
+    {
+        public List<PexelsPhoto> Photos { get; set; } = [];
+    }
+
+    private sealed class PexelsPhoto
+    {
+        public PexelsSrc Src { get; set; } = new();
+    }
+
+    private sealed class PexelsSrc
+    {
+        public string Medium { get; set; } = string.Empty;
+    }
+
+    // ── Unsplash models ────────────────────────────────────────────────────────
 
     private sealed class UnsplashSearchResult
     {
