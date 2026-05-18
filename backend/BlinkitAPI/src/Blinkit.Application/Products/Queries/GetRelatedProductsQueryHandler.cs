@@ -33,7 +33,7 @@ public class GetRelatedProductsQueryHandler(IBlinkitDbContext db)
             .Include(p => p.Tags)
             .Include(p => p.Images.OrderBy(i => i.DisplayOrder))
             .AsNoTracking()
-            .Where(p => relatedProductIds.Contains(p.Id))
+            .Where(p => relatedProductIds.Contains(p.Id) && !p.IsDeleted && p.IsActive && p.Variants.Any(v => v.IsActive))
             .ToListAsync(ct);
 
         return products.Select(GetProductsQueryHandler.MapToDto).ToList();

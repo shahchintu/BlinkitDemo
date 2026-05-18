@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { CartStore } from '../../../core/stores/cart.store';
+import { CartService } from '../../../core/services/cart.service';
 import { ImageService } from '../../../core/services/image.service';
 import { IProduct, IProductVariant } from '../../../core/models';
 import { formatPrice, getCategoryFallback } from '../../../shared/utils';
@@ -73,13 +74,13 @@ import { formatPrice, getCategoryFallback } from '../../../shared/utils';
                   </span>
                   <button
                     class="w-9 h-9 flex items-center justify-center text-[#0C831F] hover:bg-green-50 font-bold"
-                    (click)="cartStore.addItem(product, variant)"
+                    (click)="addItem(variant)"
                   >+</button>
                 </div>
               } @else {
                 <button
                   class="border-2 border-[#0C831F] text-[#0C831F] rounded-xl px-4 py-2 text-sm font-bold hover:bg-green-50 transition-colors"
-                  (click)="cartStore.addItem(product, variant)"
+                  (click)="addItem(variant)"
                 >
                   ADD
                 </button>
@@ -94,6 +95,7 @@ import { formatPrice, getCategoryFallback } from '../../../shared/utils';
 export class ProductVariantModalComponent implements OnInit {
   readonly product = inject<IProduct>(MAT_DIALOG_DATA);
   readonly cartStore = inject(CartStore);
+  private readonly cartService = inject(CartService);
   private readonly dialogRef = inject(MatDialogRef<ProductVariantModalComponent>);
   private readonly imageService = inject(ImageService);
 
@@ -116,10 +118,14 @@ export class ProductVariantModalComponent implements OnInit {
     return Math.round(((price - discountPrice) / price) * 100);
   }
 
+  addItem(variant: IProductVariant): void {
+    this.cartService.addItem(this.product, variant).subscribe();
+  }
+
   decrement(variant: IProductVariant): void {
     const item = this.cartStore.cartItems().find(i => i.variantId === variant.id);
     if (item) {
-      this.cartStore.updateQty(item.id, item.quantity - 1);
+      this.cartService.updateQty(item.id, item.quantity - 1).subscribe();
     }
   }
 

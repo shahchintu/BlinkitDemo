@@ -17,7 +17,7 @@ public class GetProductsQueryHandler(IBlinkitDbContext db)
             .Include(p => p.Attributes.OrderBy(a => a.DisplayOrder))
             .Include(p => p.Tags)
             .Include(p => p.Images.OrderBy(i => i.DisplayOrder))
-            .Where(p => !p.IsDeleted && p.IsActive)
+            .Where(p => !p.IsDeleted && p.IsActive && p.Variants.Any(v => v.IsActive))
             .AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(request.Search))
@@ -68,7 +68,7 @@ public class GetProductsQueryHandler(IBlinkitDbContext db)
         return new PagedResult<ProductDto>(dtos, totalCount, request.Page, request.PageSize, totalPages);
     }
 
-    internal static ProductDto MapToDto(Domain.Entities.Product p)
+    public static ProductDto MapToDto(Domain.Entities.Product p)
     {
         var firstImageUrl = p.Images.OrderBy(i => i.DisplayOrder).FirstOrDefault()?.ImageUrl ?? string.Empty;
 

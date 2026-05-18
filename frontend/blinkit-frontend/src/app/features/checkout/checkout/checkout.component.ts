@@ -464,9 +464,12 @@ export class CheckoutComponent implements OnInit {
               rzpResponse.razorpay_signature,
             ).subscribe({
               next: () => {
-                this.cartService.clearCart().subscribe();
                 this.router.navigate(['/checkout/confirmation'], {
-                  state: { orderId: result.orderId, paymentId: rzpResponse.razorpay_payment_id },
+                  state: {
+                    orderId: result.orderId,
+                    paymentId: rzpResponse.razorpay_payment_id,
+                    orderTotal: this.cartStore.total()
+                  },
                 });
               },
               error: (err: unknown) => {

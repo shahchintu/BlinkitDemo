@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { catchError, finalize, Observable, of, switchMap, tap, timeout } from 'rxjs';
+import { catchError, finalize, map, Observable, of, switchMap, tap, timeout } from 'rxjs';
 import { IAuthResponse, ILoginRequest, IRegisterRequest, IUser } from '../models';
 import { AuthStore } from '../stores/auth.store';
 import { CartService } from './cart.service';
@@ -29,19 +29,21 @@ export class AuthService {
 
   login(req: ILoginRequest): Observable<void> {
     return this.http.post<IAuthResponse>('/api/auth/login', req).pipe(
-      tap(res => this.authStore.setAuth(res.user, res.accessToken)),
-      switchMap(() => this.cartService.mergeGuestCartAfterLogin())
+      tap(res => {
+        this.authStore.setAuth(res.user, res.accessToken);
+        this.cartService.mergeGuestCartAfterLogin().subscribe();
+      }),
+      map(() => void 0)
     );
   }
 
-  refresh(): Observable<void> {
+  refresh(): Observable<IAuthResponse | null> {
     return this.http.post<IAuthResponse>('/api/auth/refresh', {}, { withCredentials: true }).pipe(
       timeout(5000),
       tap(res => this.authStore.setAuth(res.user, res.accessToken)),
-      switchMap(() => new Observable<void>(obs => { obs.next(); obs.complete(); })),
       catchError(() => {
         this.authStore.clearAuth();
-        return of(void 0);
+        return of(null);
       })
     );
   }
@@ -51,6 +53,7 @@ export class AuthService {
       timeout(3000),
       catchError(() => of(void 0)),
       finalize(() => {
+        this.cartService.clearCart();
         this.authStore.clearAuth();
         this.router.navigate(['/']);
       })

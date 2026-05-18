@@ -7,6 +7,8 @@ import {
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AuthStore } from '../../../core/stores/auth.store';
+import { CartService } from '../../../core/services/cart.service';
+import { formatPrice } from '../../../shared/utils';
 
 @Component({
   selector: 'app-order-confirmation',
@@ -74,12 +76,14 @@ import { AuthStore } from '../../../core/stores/auth.store';
               <span class="font-semibold text-[#1A1A1A] font-mono text-xs">{{ paymentId() }}</span>
             </div>
           }
-          @if (userEmail()) {
-            <div class="flex justify-between items-center text-sm">
-              <span class="text-[#666666]">Confirmation sent to</span>
-              <span class="font-semibold text-[#0C831F] text-xs">{{ userEmail() }}</span>
-            </div>
-          }
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-[#666666]">Order Total</span>
+            <span class="font-bold text-[#0C831F] font-mono">{{ fmt(orderTotal()) }}</span>
+          </div>
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-[#666666]">Status</span>
+            <span class="font-semibold text-[#0C831F] text-xs">📧 Confirmation email sent</span>
+          </div>
 
           <!-- ETA block -->
           <div class="bg-[#E8F5E9] rounded-[12px] p-4 text-center mt-2">
@@ -116,21 +120,30 @@ import { AuthStore } from '../../../core/stores/auth.store';
 export class OrderConfirmationComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly authStore = inject(AuthStore);
+  private readonly cartService = inject(CartService);
+
+  readonly fmt = formatPrice;
 
   readonly hasState = signal(false);
   readonly orderId = signal('');
   readonly paymentId = signal('');
-  readonly userEmail = signal('');
+  readonly orderTotal = signal<number>(0);
 
   ngOnInit(): void {
     const nav = this.router.getCurrentNavigation();
-    const state = nav?.extras?.state as { orderId?: string; paymentId?: string } | undefined;
+    const state = nav?.extras?.state ?? history.state;
 
     if (state?.orderId) {
       this.orderId.set(state.orderId);
       this.paymentId.set(state.paymentId ?? '');
-      this.userEmail.set(this.authStore.currentUser()?.email ?? '');
+      this.orderTotal.set(state.orderTotal ?? 0);
       this.hasState.set(true);
+
+      // Clear cart ONLY HERE — after confirmation page loads
+      // Small delay so cart badge doesn't flicker
+      setTimeout(() => {
+        this.cartService.clearCart().subscribe();
+      }, 500);
     } else {
       this.router.navigate(['/']);
     }

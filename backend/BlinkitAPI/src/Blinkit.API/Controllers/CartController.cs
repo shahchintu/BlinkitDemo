@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Blinkit.Application.Cart.Commands;
 using Blinkit.Application.Cart.Queries;
+using Blinkit.Application.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -27,6 +28,13 @@ public sealed class CartController(ISender sender) : ControllerBase
     {
         var cart = await sender.Send(new GetCartQuery(UserId));
         return Ok(cart);
+    }
+
+    [HttpGet("count")]
+    public async Task<IActionResult> GetCartCount()
+    {
+        var cart = await sender.Send(new GetCartQuery(UserId));
+        return Ok(new { count = cart.ItemCount });
     }
 
     [HttpPost("items")]
@@ -56,7 +64,15 @@ public sealed class CartController(ISender sender) : ControllerBase
         await sender.Send(new ClearCartCommand(UserId));
         return NoContent();
     }
+
+    [HttpPost("merge")]
+    public async Task<IActionResult> MergeCart([FromBody] MergeCartRequest req)
+    {
+        var cart = await sender.Send(new MergeCartCommand(UserId, req.Items));
+        return Ok(cart);
+    }
 }
 
 public record AddItemRequest(Guid ProductId, Guid VariantId, int Quantity);
 public record UpdateItemRequest(int Quantity);
+public record MergeCartRequest(IReadOnlyList<MergeItemRequest> Items);

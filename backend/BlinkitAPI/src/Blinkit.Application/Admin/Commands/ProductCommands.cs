@@ -67,6 +67,9 @@ public class UpdateProductCommandHandler(IBlinkitDbContext db) : IRequestHandler
 {
     public async Task Handle(UpdateProductCommand req, CancellationToken ct)
     {
+        if (req.Variants.Count == 0)
+            throw new InvalidOperationException("A product must have at least one variant.");
+
         var product = await db.Products
             .Include(p => p.Variants).Include(p => p.Attributes)
             .Include(p => p.Tags).Include(p => p.Images)
@@ -77,12 +80,10 @@ public class UpdateProductCommandHandler(IBlinkitDbContext db) : IRequestHandler
         product.CategoryId = req.CategoryId;
         product.Description = req.Description;
 
-        // Smart update variants: Keep existing, add new, remove missing (only if not ordered)
+        // Keep existing variants that are still present in the request; remove the rest.
+        // Guard: we already validated Variants.Count > 0 above, so we will never zero-out a product.
         var existingVariantIds = req.Variants.Where(v => v.Id.HasValue).Select(v => v.Id!.Value).ToList();
         var variantsToRemove = product.Variants.Where(v => !existingVariantIds.Contains(v.Id)).ToList();
-        
-        // Instead of removing, we should probably mark as inactive or only remove if not in orders
-        // For now, let's just update existing and add new
         db.ProductVariants.RemoveRange(variantsToRemove);
 
         foreach (var (v, idx) in req.Variants.Select((v, i) => (v, i)))

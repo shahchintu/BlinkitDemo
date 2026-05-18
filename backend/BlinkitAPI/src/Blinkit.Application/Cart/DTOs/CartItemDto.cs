@@ -1,3 +1,5 @@
+using Blinkit.Application.Products.DTOs;
+
 namespace Blinkit.Application.Cart.DTOs;
 
 public class CartItemDto
@@ -10,4 +12,6 @@ public class CartItemDto
     public string VariantImageUrl { get; set; } = string.Empty;
     public int Quantity { get; set; }
     public decimal UnitPrice { get; set; }
+    public ProductDto? Product { get; set; }
+    public ProductVariantDto? Variant { get; set; }
 }

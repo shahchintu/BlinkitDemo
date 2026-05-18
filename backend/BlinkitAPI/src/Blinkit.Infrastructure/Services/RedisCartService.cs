@@ -1,6 +1,9 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
 using Blinkit.Application.Cart.DTOs;
 using Blinkit.Application.Interfaces;
+using Blinkit.Application.Products.DTOs;
+using Blinkit.Application.Products.Queries;
 using Blinkit.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
@@ -14,19 +17,79 @@ public class RedisCartService(IDistributedCache cache, IBlinkitDbContext db) : I
         AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(7)
     };
 
+    // Per-user semaphores prevent concurrent read-modify-write races on the same cart.
+    // Without this, two simultaneous requests (e.g. addItem + updateQty) both read the
+    // same Redis snapshot, each append/modify, and the later write silently drops items.
+    private static readonly ConcurrentDictionary<Guid, SemaphoreSlim> UserLocks = new();
+    private static SemaphoreSlim GetLock(Guid userId) =>
+        UserLocks.GetOrAdd(userId, _ => new SemaphoreSlim(1, 1));
+
     private static string Key(Guid userId) => $"cart:{userId}";
 
     public async Task<CartDto> GetCartAsync(Guid userId)
     {
+        CartDto cart;
         try
         {
             var json = await cache.GetStringAsync(Key(userId));
             if (json is not null)
-                return JsonSerializer.Deserialize<CartDto>(json) ?? new CartDto();
+            {
+                cart = JsonSerializer.Deserialize<CartDto>(json) ?? new CartDto();
+                goto Enrich;
+            }
         }
         catch { /* Redis unavailable — fall through to DB */ }
 
-        return await LoadFromDbAsync(userId);
+        cart = await LoadFromDbAsync(userId);
+
+    Enrich:
+        if (cart.Items.Count > 0)
+        {
+            var productIds = cart.Items.Select(i => i.ProductId).Distinct().ToList();
+            var products = await db.Products
+                .Include(p => p.Category)
+                .Include(p => p.Variants)
+                .Include(p => p.Attributes)
+                .Include(p => p.Tags)
+                .Include(p => p.Images)
+                .Where(p => productIds.Contains(p.Id))
+                .ToListAsync();
+
+            var variantIds = cart.Items.Select(i => i.VariantId).Distinct().ToList();
+            var variants = await db.ProductVariants
+                .Include(v => v.Product)
+                .Where(v => variantIds.Contains(v.Id))
+                .ToListAsync();
+
+            var enrichedItems = new List<CartItemDto>();
+            foreach (var item in cart.Items)
+            {
+                var product = products.FirstOrDefault(p => p.Id == item.ProductId);
+                var variant = variants.FirstOrDefault(v => v.Id == item.VariantId);
+                if (product is not null && variant is not null)
+                {
+                    var firstImageUrl = product.Images.OrderBy(img => img.DisplayOrder).FirstOrDefault()?.ImageUrl ?? string.Empty;
+                    item.ProductName = product.Name;
+                    item.VariantUnit = variant.Unit;
+                    item.VariantImageUrl = string.IsNullOrEmpty(variant.ImageUrl) ? firstImageUrl : variant.ImageUrl;
+                    item.UnitPrice = variant.DiscountPrice ?? variant.Price;
+                    item.Product = GetProductsQueryHandler.MapToDto(product);
+                    item.Variant = new ProductVariantDto(
+                        variant.Id,
+                        variant.Unit,
+                        variant.Price,
+                        variant.DiscountPrice,
+                        variant.StockQty,
+                        string.IsNullOrEmpty(variant.ImageUrl) ? firstImageUrl : variant.ImageUrl,
+                        variant.DisplayOrder
+                    );
+                    enrichedItems.Add(item);
+                }
+            }
+            cart.Items = enrichedItems;
+        }
+
+        return cart;
     }
 
     public async Task<CartDto> AddItemAsync(Guid userId, Guid productId, Guid variantId, int quantity)
@@ -39,67 +102,159 @@ public class RedisCartService(IDistributedCache cache, IBlinkitDbContext db) : I
         if (variant.StockQty < quantity)
             throw new ArgumentException($"Only {variant.StockQty} unit(s) available");
 
-        var cart = await GetCartAsync(userId);
+        var sem = GetLock(userId);
+        await sem.WaitAsync();
+        try
+        {
+            // Reload inside the lock so we always work from the latest persisted cart,
+            // not a snapshot that another concurrent request may have already modified.
+            var cart = await GetCartAsync(userId);
 
-        var existing = cart.Items.FirstOrDefault(i => i.VariantId == variantId);
-        if (existing is not null)
-        {
-            existing.Quantity += quantity;
-        }
-        else
-        {
-            cart.Items.Add(new CartItemDto
+            var existing = cart.Items.FirstOrDefault(i => i.VariantId == variantId);
+            if (existing is not null)
             {
-                Id = Guid.NewGuid(),
-                ProductId = productId,
-                ProductName = variant.Product.Name,
-                VariantId = variantId,
-                VariantUnit = variant.Unit,
-                VariantImageUrl = variant.ImageUrl,
-                Quantity = quantity,
-                UnitPrice = variant.DiscountPrice ?? variant.Price,
-            });
-        }
+                existing.Quantity += quantity;
+            }
+            else
+            {
+                cart.Items.Add(new CartItemDto
+                {
+                    Id = Guid.NewGuid(),
+                    ProductId = productId,
+                    ProductName = variant.Product.Name,
+                    VariantId = variantId,
+                    VariantUnit = variant.Unit,
+                    VariantImageUrl = variant.ImageUrl,
+                    Quantity = quantity,
+                    UnitPrice = variant.DiscountPrice ?? variant.Price,
+                });
+            }
 
-        await PersistAsync(userId, cart);
-        return cart;
+            await PersistAsync(userId, cart);
+            return cart;
+        }
+        finally
+        {
+            sem.Release();
+        }
     }
 
     public async Task<CartDto> UpdateItemAsync(Guid userId, Guid cartItemId, int quantity)
     {
-        var cart = await GetCartAsync(userId);
-        var item = cart.Items.FirstOrDefault(i => i.Id == cartItemId)
-            ?? throw new KeyNotFoundException("Cart item not found");
+        var sem = GetLock(userId);
+        await sem.WaitAsync();
+        try
+        {
+            var cart = await GetCartAsync(userId);
+            var item = cart.Items.FirstOrDefault(i => i.Id == cartItemId)
+                ?? throw new KeyNotFoundException("Cart item not found");
 
-        if (quantity <= 0)
-            cart.Items.Remove(item);
-        else
-            item.Quantity = quantity;
+            if (quantity <= 0)
+                cart.Items.Remove(item);
+            else
+                item.Quantity = quantity;
 
-        await PersistAsync(userId, cart);
-        return cart;
+            await PersistAsync(userId, cart);
+            return cart;
+        }
+        finally
+        {
+            sem.Release();
+        }
     }
 
     public async Task<CartDto> RemoveItemAsync(Guid userId, Guid cartItemId)
     {
-        var cart = await GetCartAsync(userId);
-        var item = cart.Items.FirstOrDefault(i => i.Id == cartItemId)
-            ?? throw new KeyNotFoundException("Cart item not found");
+        var sem = GetLock(userId);
+        await sem.WaitAsync();
+        try
+        {
+            var cart = await GetCartAsync(userId);
+            var item = cart.Items.FirstOrDefault(i => i.Id == cartItemId)
+                ?? throw new KeyNotFoundException("Cart item not found");
 
-        cart.Items.Remove(item);
-        await PersistAsync(userId, cart);
-        return cart;
+            cart.Items.Remove(item);
+            await PersistAsync(userId, cart);
+            return cart;
+        }
+        finally
+        {
+            sem.Release();
+        }
+    }
+
+    public async Task<CartDto> MergeItemsAsync(Guid userId, IReadOnlyList<MergeItemRequest> items)
+    {
+        var sem = GetLock(userId);
+        await sem.WaitAsync();
+        try
+        {
+            // Load the existing cart once inside the lock — single read before all mutations
+            var cart = await GetCartAsync(userId);
+
+            foreach (var req in items)
+            {
+                var variant = await db.ProductVariants
+                    .Include(v => v.Product)
+                    .FirstOrDefaultAsync(v => v.Id == req.VariantId && v.ProductId == req.ProductId && v.IsActive);
+
+                // Skip unknown or inactive variants silently — don't block the whole merge
+                if (variant is null) continue;
+
+                var existing = cart.Items.FirstOrDefault(i => i.VariantId == req.VariantId);
+                if (existing is not null)
+                {
+                    var newQty = existing.Quantity + req.Quantity;
+                    existing.Quantity = newQty > variant.StockQty ? variant.StockQty : newQty;
+                }
+                else
+                {
+                    var clampedQty = req.Quantity > variant.StockQty ? variant.StockQty : req.Quantity;
+                    if (clampedQty > 0)
+                    {
+                        cart.Items.Add(new CartItemDto
+                        {
+                            Id = Guid.NewGuid(),
+                            ProductId = req.ProductId,
+                            ProductName = variant.Product.Name,
+                            VariantId = req.VariantId,
+                            VariantUnit = variant.Unit,
+                            VariantImageUrl = variant.ImageUrl,
+                            Quantity = clampedQty,
+                            UnitPrice = variant.DiscountPrice ?? variant.Price,
+                        });
+                    }
+                }
+            }
+
+            // Single write after all items processed
+            await PersistAsync(userId, cart);
+            return cart;
+        }
+        finally
+        {
+            sem.Release();
+        }
     }
 
     public async Task ClearAsync(Guid userId)
     {
-        try { await cache.RemoveAsync(Key(userId)); } catch { }
-
-        var dbCart = await db.Carts.Include(c => c.Items).FirstOrDefaultAsync(c => c.UserId == userId);
-        if (dbCart is not null)
+        var sem = GetLock(userId);
+        await sem.WaitAsync();
+        try
         {
-            db.CartItems.RemoveRange(dbCart.Items);
-            await db.SaveChangesAsync();
+            try { await cache.RemoveAsync(Key(userId)); } catch { }
+
+            var dbCart = await db.Carts.Include(c => c.Items).FirstOrDefaultAsync(c => c.UserId == userId);
+            if (dbCart is not null)
+            {
+                db.CartItems.RemoveRange(dbCart.Items);
+                await db.SaveChangesAsync();
+            }
+        }
+        finally
+        {
+            sem.Release();
         }
     }
 

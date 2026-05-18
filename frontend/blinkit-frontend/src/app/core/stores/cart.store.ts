@@ -1,82 +1,96 @@
 import { computed } from '@angular/core';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { ICartItem, IProduct, IProductVariant } from '../models';
-import { generateId } from '../../shared/utils';
-
-/**
- * NgRx Signal store for cart item state.
- *
- * This is the reactive source of truth for UI components (navbar badge,
- * cart sidebar, checkout totals). CartService keeps it in sync with both
- * localStorage (guest) and the server API (authenticated).
- *
- * `total` and `itemCount` are computed signals — they update automatically
- * whenever cartItems changes, triggering OnPush re-renders with zero manual calls.
- */
 
 interface CartState {
   cartItems: ICartItem[];
+  isLoading: boolean;
 }
 
 export const CartStore = signalStore(
   { providedIn: 'root' },
-  withState<CartState>({ cartItems: [] }),
-  withComputed(store => ({
-    itemCount: computed(() => store.cartItems().reduce((sum, item) => sum + item.quantity, 0)),
+  withState<CartState>({
+    cartItems: [] as ICartItem[],
+    isLoading: false,
+  }),
+  withComputed((store) => ({
+    itemCount: computed(() =>
+      store.cartItems().reduce(
+        (sum, i) => sum + i.quantity, 0)
+    ),
     total: computed(() =>
-      store.cartItems().reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
+      store.cartItems().reduce(
+        (sum, i) => sum + (i.unitPrice * i.quantity), 0)
     ),
   })),
-  withMethods(store => ({
+  withMethods((store) => ({
+
     isVariantInCart(variantId: string): boolean {
       return store.cartItems().some(i => i.variantId === variantId);
     },
+
     getVariantQty(variantId: string): number {
       return store.cartItems().find(i => i.variantId === variantId)?.quantity ?? 0;
     },
+
+    setItems(items: ICartItem[]): void {
+      patchState(store, { cartItems: [...items] });
+    },
+
     addItem(product: IProduct, variant: IProductVariant): void {
-      const existing = store.cartItems().find(i => i.variantId === variant.id);
-      if (existing) {
-        patchState(store, {
-          cartItems: store.cartItems().map(i =>
-            i.variantId === variant.id ? { ...i, quantity: i.quantity + 1 } : i
-          ),
-        });
+      const current = [...store.cartItems()];
+      const idx = current.findIndex(
+        i => i.variantId === variant.id
+      );
+      if (idx >= 0) {
+        const updated = current.map((item, i) =>
+          i === idx
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+        patchState(store, { cartItems: updated });
       } else {
-        const newItem: ICartItem = {
-          id: generateId(),
-          productId: product.id,
-          product,
-          variantId: variant.id,
-          variant,
-          quantity: 1,
-          unitPrice: variant.discountPrice ?? variant.price,
-        };
-        patchState(store, { cartItems: [...store.cartItems(), newItem] });
+        patchState(store, {
+          cartItems: [...current, {
+            id: crypto.randomUUID(),
+            productId: product.id,
+            product,
+            variantId: variant.id,
+            variant,
+            quantity: 1,
+            unitPrice: variant.discountPrice ?? variant.price
+          }]
+        });
       }
     },
+
     updateQty(cartItemId: string, qty: number): void {
       if (qty <= 0) {
-        patchState(store, { cartItems: store.cartItems().filter(i => i.id !== cartItemId) });
-      } else {
         patchState(store, {
-          cartItems: store.cartItems().map(i => i.id === cartItemId ? { ...i, quantity: qty } : i),
+          cartItems: store.cartItems().filter(
+            i => i.id !== cartItemId
+          )
         });
+        return;
       }
+      patchState(store, {
+        cartItems: store.cartItems().map(i =>
+          i.id === cartItemId ? { ...i, quantity: qty } : i
+        )
+      });
     },
+
     removeItem(cartItemId: string): void {
-      patchState(store, { cartItems: store.cartItems().filter(i => i.id !== cartItemId) });
+      patchState(store, {
+        cartItems: store.cartItems().filter(
+          i => i.id !== cartItemId
+        )
+      });
     },
+
     clearCart(): void {
       patchState(store, { cartItems: [] });
     },
-    setItems(items: ICartItem[]): void {
-      patchState(store, { cartItems: items });
-    },
-    updateItemId(variantId: string, newId: string): void {
-      patchState(store, {
-        cartItems: store.cartItems().map(i => i.variantId === variantId ? { ...i, id: newId } : i),
-      });
-    },
+
   }))
 );

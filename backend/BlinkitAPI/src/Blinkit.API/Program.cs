@@ -139,6 +139,10 @@ using (var scope = app.Services.CreateScope())
         foreach (var role in new[] { "Admin", "User" })
             if (!await roleManager.RoleExistsAsync(role))
                 await roleManager.CreateAsync(new IdentityRole(role));
+
+        // Data-fix: ensure every active product has at least one active variant.
+        // Products with zero variants break the Angular ADD button (variants[0] is falsy).
+        await SeedData.FixZeroVariantProductsAsync(db);
     }
 }
 

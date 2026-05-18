@@ -194,7 +194,7 @@ import { formatPrice, getCategoryFallback } from '../../../shared/utils';
                     <h3 class="text-sm font-bold text-gray-800 mb-3">Price Details</h3>
                     <div class="space-y-2 text-sm">
                       <div class="flex justify-between text-gray-600">
-                        <span>MRP ({{ cart.itemCount }} items)</span>
+                        <span>Subtotal ({{ cart.itemCount }} items)</span>
                         <span>{{ fmt(cart.subTotal) }}</span>
                       </div>
                       @if (appliedCoupon()) {

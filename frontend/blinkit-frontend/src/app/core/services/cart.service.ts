@@ -1,18 +1,8 @@
-import { effect, inject, Injectable } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { HttpClient } from '@angular/common/http';
-import { Router } from '@angular/router';
-import {
-  BehaviorSubject,
-  catchError,
-  finalize,
-  forkJoin,
-  map,
-  Observable,
-  of,
-  switchMap,
-  tap,
-  throwError,
-} from 'rxjs';
+import { BehaviorSubject, forkJoin, Observable, of } from 'rxjs';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { AuthStore } from '../stores/auth.store';
 import { CartStore } from '../stores/cart.store';
 import { ICartItem, IProduct, IProductVariant } from '../models';
@@ -34,302 +24,205 @@ export interface CartDto {
   itemCount: number;
 }
 
-/**
- * Manages cart state for both guest and authenticated users.
- *
- * Guest flow: items stored in `localStorage.guestCart` as full ICartItem objects.
- *   CartStore signals and cart$ BehaviorSubject are kept in sync via syncGuest().
- *
- * Authenticated flow: items stored server-side (Redis → SQL Server).
- *   Every mutating call returns the full updated CartDto from the server.
- *
- * On login: mergeGuestCartAfterLogin() clears localStorage atomically then
- *   POSTs each guest item to the API, finishing with loadCart() to refresh state.
- *
- * The constructor effect re-runs whenever isAuthenticated() changes, handling
- *   both the page-reload (refresh cookie) and the explicit login cases.
- */
 @Injectable({ providedIn: 'root' })
 export class CartService {
   private readonly http = inject(HttpClient);
-  private readonly authStore = inject(AuthStore);
   private readonly cartStore = inject(CartStore);
-  private readonly router = inject(Router);
+  private readonly authStore = inject(AuthStore);
+  
+  private sidebarOpen = signal<boolean>(false);
+  isSidebarOpen = this.sidebarOpen.asReadonly();
+  
+  openSidebar(): void { 
+    this.sidebarOpen.set(true); 
+    this.sidebarSubject.next(true);
+  }
+  closeSidebar(): void { 
+    this.sidebarOpen.set(false); 
+    this.sidebarSubject.next(false);
+  }
 
+  // Compatibility observables and methods
   private readonly sidebarSubject = new BehaviorSubject<boolean>(false);
   readonly isSidebarOpen$ = this.sidebarSubject.asObservable();
+  openCart(): void { this.openSidebar(); }
+  closeCart(): void { this.closeSidebar(); }
 
-  private readonly cartSubject = new BehaviorSubject<CartDto>({ items: [], subTotal: 0, itemCount: 0 });
-  readonly cart$ = this.cartSubject.asObservable();
-
-  // Prevents the effect's loadCart() from racing with mergeGuestCartAfterLogin().
-  // Set to true at the start of merge, reset to false in finalize().
-  private _merging = false;
-
-  constructor() {
-    effect(() => {
-      if (this.authStore.isAuthenticated()) {
-        // Skip if mergeGuestCartAfterLogin() is already in progress —
-        // it will call loadCart() itself when done.
-        if (!this._merging) {
-          this.loadCart().subscribe();
-        }
-      } else {
-        const guestItems = this.readGuestItems();
-        this.cartStore.setItems(guestItems);
-        this.cartSubject.next(this.guestItemsToCartDto(guestItems));
-      }
-    });
-  }
-
-  openCart(): void { this.sidebarSubject.next(true); }
-  closeCart(): void { this.sidebarSubject.next(false); }
-
-  loadCart(): Observable<void> {
-    return this.http.get<CartDto>('/api/cart').pipe(
-      tap(dto => {
-        this.cartSubject.next(dto);
-        this.cartStore.setItems(this.buildStoreItemsFromDto(dto));
-      }),
-      map(() => void 0),
-    );
-  }
-
-  addItem(product: IProduct, variant: IProductVariant): Observable<void> {
-    if (!this.authStore.isAuthenticated()) {
-      this.addGuestItem(product, variant);
-      return of(void 0);
-    }
-
-    this.cartStore.addItem(product, variant);
-
-    return this.http
-      .post<CartDto>('/api/cart/items', {
-        productId: product.id,
-        variantId: variant.id,
-        quantity: 1,
-      })
-      .pipe(
-        tap(dto => {
-          this.cartSubject.next(dto);
-          const serverItem = dto.items.find(i => i.variantId === variant.id);
-          if (serverItem) {
-            this.cartStore.updateItemId(variant.id, serverItem.id);
-          }
-        }),
-        map(() => void 0),
-        catchError(err => {
-          const item = this.cartStore.cartItems().find(i => i.variantId === variant.id);
-          if (item) this.cartStore.updateQty(item.id, item.quantity - 1);
-          return throwError(() => err);
-        }),
-      );
-  }
-
-  updateQty(serverItemId: string, qty: number): Observable<void> {
-    if (!this.authStore.isAuthenticated()) {
-      const items = this.readGuestItems();
-      const updated = qty <= 0
-        ? items.filter(i => i.id !== serverItemId)
-        : items.map(i => i.id === serverItemId ? { ...i, quantity: qty } : i);
-      this.syncGuest(updated);
-      return of(void 0);
-    }
-
-    const variantId = this.getVariantId(serverItemId);
-    if (variantId) {
-      const storeItem = this.cartStore.cartItems().find(i => i.variantId === variantId);
-      if (storeItem) this.cartStore.updateQty(storeItem.id, qty);
-    }
-
-    if (qty <= 0) {
-      return this.removeItem(serverItemId);
-    }
-
-    return this.http
-      .put<CartDto>(`/api/cart/items/${serverItemId}`, { quantity: qty })
-      .pipe(
-        tap(dto => {
-          this.cartSubject.next(dto);
-          this.cartStore.setItems(this.buildStoreItemsFromDto(dto));
-        }),
-        map(() => void 0),
-      );
-  }
-
-  removeItem(serverItemId: string): Observable<void> {
-    if (!this.authStore.isAuthenticated()) {
-      const items = this.readGuestItems().filter(i => i.id !== serverItemId);
-      this.syncGuest(items);
-      return of(void 0);
-    }
-
-    const variantId = this.getVariantId(serverItemId);
-    if (variantId) {
-      const storeItem = this.cartStore.cartItems().find(i => i.variantId === variantId);
-      if (storeItem) this.cartStore.removeItem(storeItem.id);
-    }
-
-    return this.http.delete<CartDto>(`/api/cart/items/${serverItemId}`).pipe(
-      tap(dto => {
-        this.cartSubject.next(dto);
-        this.cartStore.setItems(this.buildStoreItemsFromDto(dto));
-      }),
-      map(() => void 0),
-    );
-  }
-
-  clearCart(): Observable<void> {
-    return this.http.delete<void>('/api/cart').pipe(
-      tap(() => {
-        this.cartSubject.next({ items: [], subTotal: 0, itemCount: 0 });
-        this.cartStore.clearCart();
-      }),
-      map(() => void 0),
-    );
-  }
-
-  reorderItems(items: { productId: string; variantId: string; quantity: number }[]): Observable<void> {
-    const posts = items.map(i =>
-      this.http.post<CartDto>('/api/cart/items', {
-        productId: i.productId,
-        variantId: i.variantId,
-        quantity: i.quantity,
-      })
-    );
-    return forkJoin(posts).pipe(
-      switchMap(() => this.loadCart()),
-    );
-  }
-
-  deliveryFee(subtotal: number): number {
-    return subtotal >= 199 ? 0 : 29;
-  }
-
-  mergeGuestCartAfterLogin(): Observable<void> {
-    let guestItems: ICartItem[];
-    try {
-      guestItems = JSON.parse(localStorage.getItem('guest_cart') ?? '[]');
-      localStorage.removeItem('guest_cart');
-    } catch {
-      guestItems = [];
-    }
-
-    if (guestItems.length === 0) {
-      return this.loadCart();
-    }
-
-    // Block the CartService effect from calling loadCart() until the
-    // posts + final loadCart() complete, preventing a race that would
-    // overwrite the store with the pre-merge (empty) server cart.
-    this._merging = true;
-
-    const posts = guestItems.map(item =>
-      this.http.post<CartDto>('/api/cart/items', {
+  // Reactive compatibility observable for components that require cart$
+  readonly cart$: Observable<CartDto> = toObservable(this.cartStore.cartItems).pipe(
+    map(items => ({
+      items: items.map(item => ({
+        id: item.id,
         productId: item.productId,
+        productName: item.product?.name ?? '',
         variantId: item.variantId,
+        variantUnit: item.variant?.unit ?? '',
+        variantImageUrl: item.variant?.imageUrl ?? '',
         quantity: item.quantity,
-      }).pipe(catchError(() => of(null as CartDto | null)))
-    );
-
-    return forkJoin(posts).pipe(
-      switchMap(() => this.loadCart()),
-      map(() => void 0),
-      finalize(() => { this._merging = false; }),
-    );
-  }
-
-  private addGuestItem(product: IProduct, variant: IProductVariant): void {
-    const items = this.readGuestItems();
-    const existing = items.find(i => i.variantId === variant.id);
-    if (existing) {
-      existing.quantity += 1;
-    } else {
-      items.push({
-        id: `guest-${variant.id}`,
-        productId: product.id,
-        product,
-        variantId: variant.id,
-        variant,
-        quantity: 1,
-        unitPrice: variant.discountPrice ?? variant.price,
-      });
-    }
-    this.syncGuest(items);
-  }
-
-  private readGuestItems(): ICartItem[] {
-    try {
-      return JSON.parse(localStorage.getItem('guest_cart') ?? '[]');
-    } catch {
-      return [];
-    }
-  }
-
-  private syncGuest(items: ICartItem[]): void {
-    try {
-      localStorage.setItem('guest_cart', JSON.stringify(items));
-    } catch { }
-    this.cartStore.setItems(items);
-    this.cartSubject.next(this.guestItemsToCartDto(items));
-  }
-
-  private guestItemsToCartDto(items: ICartItem[]): CartDto {
-    return {
-      items: items.map(i => ({
-        id: i.id,
-        productId: i.productId,
-        productName: i.product.name,
-        variantId: i.variantId,
-        variantUnit: i.variant.unit,
-        variantImageUrl: i.variant.imageUrl,
-        quantity: i.quantity,
-        unitPrice: i.unitPrice,
+        unitPrice: item.unitPrice,
       })),
       subTotal: items.reduce((s, i) => s + i.unitPrice * i.quantity, 0),
       itemCount: items.reduce((s, i) => s + i.quantity, 0),
-    };
+    }))
+  );
+
+  // ── LOAD CART FROM SERVER ──────────────────────────
+  loadCart(): Observable<void> {
+    if (!this.authStore.isAuthenticated()) {
+      this.loadGuestCart();
+      return of(void 0);
+    }
+    return this.http.get<any>('/api/cart').pipe(
+      tap(data => {
+        if (!data?.items) return;
+        const items: ICartItem[] = (data.items || []).map(
+          (i: any) => ({
+            id: i.id,
+            productId: i.productId,
+            product: i.product,
+            variantId: i.variantId,
+            variant: i.variant,
+            quantity: i.quantity,
+            unitPrice: i.unitPrice
+          })
+        );
+        this.cartStore.setItems(items);
+      }),
+      map(() => void 0),
+      catchError(() => of(void 0))
+    );
   }
 
-  private getVariantId(serverItemId: string): string | undefined {
-    return this.cartSubject.value.items.find(i => i.id === serverItemId)?.variantId;
+  // ── ADD ITEM ──────────────────────────────────────
+  addItem(product: IProduct, variant: IProductVariant): Observable<void> {
+    // 1. Update UI immediately
+    this.cartStore.addItem(product, variant);
+
+    // 2. Sync to server silently
+    if (this.authStore.isAuthenticated()) {
+      return this.http.post('/api/cart/items', {
+        productId: product.id,
+        variantId: variant.id,
+        quantity: 1
+      }).pipe(
+        map(() => void 0),
+        catchError(() => {
+          // On error only: reload from server
+          this.loadCart().subscribe();
+          return of(void 0);
+        })
+      );
+      // NEVER call loadCart() on success
+    } else {
+      this.saveGuestCart();
+      return of(void 0);
+    }
   }
 
-  private buildStoreItemsFromDto(dto: CartDto): ICartItem[] {
-    return dto.items.map(item => ({
-      id: item.id,
-      productId: item.productId,
-      product: {
-        id: item.productId,
-        categoryId: '',
-        categoryName: '',
-        name: item.productName,
-        slug: '',
-        description: '',
-        price: item.unitPrice,
-        discountPrice: null,
-        stockQty: 1,
-        unit: item.variantUnit,
-        imageUrl: item.variantImageUrl,
-        images: [item.variantImageUrl],
-        isActive: true,
-        variants: [],
-        attributes: [],
-        relatedTags: [],
-      } as IProduct,
-      variantId: item.variantId,
-      variant: {
-        id: item.variantId,
+  // ── UPDATE QTY ────────────────────────────────────
+  updateQty(cartItemId: string, qty: number): Observable<void> {
+    this.cartStore.updateQty(cartItemId, qty);
+    if (this.authStore.isAuthenticated()) {
+      const req = qty <= 0
+        ? this.http.delete(`/api/cart/items/${cartItemId}`)
+        : this.http.put(`/api/cart/items/${cartItemId}`, { quantity: qty });
+      return req.pipe(
+        map(() => void 0),
+        catchError(() => of(void 0))
+      );
+    } else {
+      this.saveGuestCart();
+      return of(void 0);
+    }
+  }
+
+  // ── REMOVE ITEM ───────────────────────────────────
+  removeItem(cartItemId: string): Observable<void> {
+    this.cartStore.removeItem(cartItemId);
+    if (this.authStore.isAuthenticated()) {
+      return this.http.delete(`/api/cart/items/${cartItemId}`).pipe(
+        map(() => void 0),
+        catchError(() => of(void 0))
+      );
+    } else {
+      this.saveGuestCart();
+      return of(void 0);
+    }
+  }
+
+  // ── CLEAR CART ────────────────────────────────────
+  clearCart(): Observable<void> {
+    this.cartStore.clearCart();
+    localStorage.removeItem('guestCart');
+    if (this.authStore.isAuthenticated()) {
+      return this.http.delete('/api/cart').pipe(
+        map(() => void 0),
+        catchError(() => of(void 0))
+      );
+    }
+    return of(void 0);
+  }
+
+  // ── GUEST CART ────────────────────────────────────
+  saveGuestCart(): void {
+    try {
+      localStorage.setItem(
+        'guestCart',
+        JSON.stringify(this.cartStore.cartItems())
+      );
+    } catch { /* ignore */ }
+  }
+
+  loadGuestCart(): void {
+    try {
+      const raw = localStorage.getItem('guestCart');
+      if (!raw) return;
+      const items: ICartItem[] = JSON.parse(raw);
+      if (items?.length) this.cartStore.setItems(items);
+    } catch {
+      localStorage.removeItem('guestCart');
+    }
+  }
+
+  mergeGuestCartAfterLogin(): Observable<void> {
+    const raw = localStorage.getItem('guestCart');
+    if (!raw) return this.loadCart();
+
+    let guestItems: ICartItem[] = [];
+    try { guestItems = JSON.parse(raw); } catch { }
+    if (!guestItems.length) return this.loadCart();
+
+    const requests = guestItems.map(item =>
+      this.http.post('/api/cart/items', {
         productId: item.productId,
-        unit: item.variantUnit,
-        price: item.unitPrice,
-        discountPrice: null,
-        stockQty: 1,
-        imageUrl: item.variantImageUrl,
-        displayOrder: 0,
-      } as IProductVariant,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-    }));
+        variantId: item.variantId,
+        quantity: item.quantity
+      }).pipe(catchError(() => of(null)))
+    );
+
+    return forkJoin(requests).pipe(
+      tap(() => localStorage.removeItem('guestCart')),
+      switchMap(() => this.loadCart())
+    );
+  }
+
+  // Compatibility reorderItems method
+  reorderItems(items: { productId: string; variantId: string; quantity: number }[]): Observable<void> {
+    const posts = items.map(i =>
+      this.http.post('/api/cart/items', {
+        productId: i.productId,
+        variantId: i.variantId,
+        quantity: i.quantity,
+      }).pipe(catchError(() => of(null)))
+    );
+    return forkJoin(posts).pipe(
+      switchMap(() => this.loadCart())
+    );
+  }
+
+  // Compatibility deliveryFee supporting optional subtotal parameter
+  deliveryFee(subtotal?: number): number {
+    const amount = subtotal !== undefined ? subtotal : this.cartStore.total();
+    return amount >= 199 ? 0 : 29;
   }
 }

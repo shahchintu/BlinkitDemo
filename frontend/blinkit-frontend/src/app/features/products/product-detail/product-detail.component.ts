@@ -5,6 +5,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ProductService } from '../../../core/services/product.service';
 import { ImageService } from '../../../core/services/image.service';
 import { CartStore } from '../../../core/stores/cart.store';
+import { CartService } from '../../../core/services/cart.service';
 import { IProduct, IProductVariant } from '../../../core/models';
 import { formatPrice, getCategoryFallback } from '../../../shared/utils';
 import { ProductCardComponent } from '../product-card/product-card.component';
@@ -234,6 +235,7 @@ export class ProductDetailComponent implements OnInit {
   private readonly productService = inject(ProductService);
   private readonly imageService = inject(ImageService);
   readonly cartStore = inject(CartStore);
+  private readonly cartService = inject(CartService);
 
   readonly product = signal<IProduct | null>(null);
   readonly selectedVariant = signal<IProductVariant | null>(null);
@@ -314,7 +316,7 @@ export class ProductDetailComponent implements OnInit {
     const p = this.product();
     const v = this.selectedVariant() ?? p?.variants[0];
     if (!p || !v) return;
-    this.cartStore.addItem(p, v);
+    this.cartService.addItem(p, v).subscribe();
     this.addedFlash.set(true);
     setTimeout(() => this.addedFlash.set(false), 1500);
   }
@@ -323,7 +325,7 @@ export class ProductDetailComponent implements OnInit {
     const variantId = this.selectedVariant()?.id ?? this.product()?.variants[0]?.id;
     if (!variantId) return;
     const item = this.cartStore.cartItems().find(i => i.variantId === variantId);
-    if (item) this.cartStore.updateQty(item.id, item.quantity - 1);
+    if (item) this.cartService.updateQty(item.id, item.quantity - 1).subscribe();
   }
 
   scrollThumbs(dir: number): void {

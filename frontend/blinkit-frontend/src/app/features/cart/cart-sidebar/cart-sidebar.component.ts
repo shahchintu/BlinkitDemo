@@ -3,13 +3,11 @@ import {
   Component,
   effect,
   inject,
-  OnInit,
   signal,
 } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { tap } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import { CartService } from '../../../core/services/cart.service';
 import { CartStore } from '../../../core/stores/cart.store';
@@ -201,7 +199,7 @@ import { formatPrice, getCategoryFallback } from '../../../shared/utils';
             <div class="px-4 py-3 border-t border-[#E0E0E0]">
               <div class="space-y-1">
                 <div class="flex justify-between text-[14px] py-1 text-[#666666]">
-                  <span>MRP</span>
+                  <span>Subtotal</span>
                   <span>{{ fmt(cartStore.total()) }}</span>
                 </div>
                 @if (appliedCoupon()) {
@@ -244,7 +242,7 @@ import { formatPrice, getCategoryFallback } from '../../../shared/utils';
     }
   `,
 })
-export class CartSidebarComponent implements OnInit {
+export class CartSidebarComponent {
   readonly cartService = inject(CartService);
   readonly cartStore = inject(CartStore);
   private readonly authStore = inject(AuthStore);
@@ -263,15 +261,29 @@ export class CartSidebarComponent implements OnInit {
   readonly productImages = signal<Record<string, string>>({});
 
   constructor() {
+    // Pre-fetch product images whenever cart items or related products change.
     effect(() => {
-      // Cart items
       this.cartStore.cartItems().forEach(item => {
         this.fetchImageIfNeeded(item.product.name, item.product.categoryName, item.productId);
       });
-      // Related products
       this.relatedProducts().forEach(rp => {
         this.fetchImageIfNeeded(rp.name, rp.categoryName, rp.id);
       });
+    });
+
+    // Fetch "customers also bought" based on the first cart item.
+    // Uses onCleanup so the HTTP subscription is cancelled if cartItems changes
+    // again before the previous response arrives.
+    effect((onCleanup) => {
+      const items = this.cartStore.cartItems();
+      if (items.length > 0) {
+        const sub = this.productService
+          .getRelatedProducts(items[0].productId, 4)
+          .subscribe(products => this.relatedProducts.set(products));
+        onCleanup(() => sub.unsubscribe());
+      } else {
+        this.relatedProducts.set([]);
+      }
     });
   }
 
@@ -283,21 +295,6 @@ export class CartSidebarComponent implements OnInit {
         }
       });
     }
-  }
-
-  ngOnInit(): void {
-    this.cartService.cart$.pipe(
-      tap(() => {
-        const items = this.cartStore.cartItems();
-        if (items.length > 0) {
-          this.productService
-            .getRelatedProducts(items[0].productId, 4)
-            .subscribe(products => this.relatedProducts.set(products));
-        } else {
-          this.relatedProducts.set([]);
-        }
-      }),
-    ).subscribe();
   }
 
   increment(item: ICartItem): void {

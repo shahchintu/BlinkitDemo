@@ -1167,6 +1167,48 @@ public static class SeedData
         await db.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Data-fix: ensures every non-deleted, active product has at least one active variant.
+    /// Called on every startup after seeding has already occurred (the else branch in Program.cs).
+    /// Any product found with zero active variants gets a synthetic "default" variant derived
+    /// from its first ProductImage URL so the Angular ADD button always has something to work with.
+    /// </summary>
+    public static async Task FixZeroVariantProductsAsync(BlinkitDbContext db)
+    {
+        var broken = await db.Products
+            .Include(p => p.Variants)
+            .Include(p => p.Images)
+            .Where(p => !p.IsDeleted && p.IsActive && !p.Variants.Any(v => v.IsActive))
+            .ToListAsync();
+
+        if (broken.Count == 0)
+            return;
+
+        foreach (var product in broken)
+        {
+            var imageUrl = product.Images
+                .OrderBy(i => i.DisplayOrder)
+                .FirstOrDefault()?.ImageUrl ?? string.Empty;
+
+            var defaultVariant = new ProductVariant
+            {
+                Id = Guid.NewGuid(),
+                ProductId = product.Id,
+                Unit = "1 pc",
+                Price = 29m,
+                DiscountPrice = null,
+                StockQty = 50,
+                ImageUrl = imageUrl,
+                DisplayOrder = 0,
+                IsActive = true,
+            };
+
+            await db.ProductVariants.AddAsync(defaultVariant);
+        }
+
+        await db.SaveChangesAsync();
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static Category Cat(string name, string slug, string iconUrl, int order) =>

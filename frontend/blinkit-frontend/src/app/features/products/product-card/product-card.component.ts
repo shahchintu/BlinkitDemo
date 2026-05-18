@@ -94,12 +94,18 @@ import { ProductVariantModalComponent } from '../product-variant-modal/product-v
                 (click)="openVariantModal()"
               >+</button>
             </div>
-          } @else if (!cartStore.isVariantInCart(product.variants[0]?.id ?? '')) {
+          } @else if (product.variants.length > 0 && !cartStore.isVariantInCart(product.variants[0].id)) {
             <!-- Single variant not in cart: outlined green -->
             <button
               class="w-full border-2 border-[#0C831F] rounded-[8px] h-[36px] text-[#0C831F] text-[14px] font-bold hover:bg-[#0C831F] hover:text-white transition-colors"
               (click)="addSingle()"
             >ADD</button>
+          } @else if (product.variants.length === 0) {
+            <!-- No variants: unavailable -->
+            <button disabled
+              class="w-full border-2 border-[#E0E0E0] text-[#999999] rounded-[8px] h-[36px] text-[14px] font-bold cursor-not-allowed">
+              Unavailable
+            </button>
           } @else {
             <!-- Single variant in cart: solid green stepper -->
             <div class="flex items-center bg-[#0C831F] rounded-[8px] h-[36px]">
@@ -112,7 +118,7 @@ import { ProductVariantModalComponent } from '../product-variant-modal/product-v
               </span>
               <button
                 class="w-9 h-[36px] flex items-center justify-center text-white text-[18px] font-light hover:bg-[#0a6b19] transition-colors rounded-r-[8px]"
-                (click)="addSingle()"
+                (click)="increment()"
               >+</button>
             </div>
           }
@@ -165,9 +171,16 @@ export class ProductCardComponent implements OnInit {
   }
 
   addSingle(): void {
-    if (this.product.variants[0]) {
-      this.cartService.addItem(this.product, this.product.variants[0]).subscribe();
-    }
+    const variant = this.product.variants[0];
+    if (!variant) return;
+    this.cartService.addItem(this.product, variant).subscribe();
+  }
+
+  increment(): void {
+    const variant = this.product.variants[0];
+    if (!variant) return;
+    const storeItem = this.cartStore.cartItems().find(i => i.variantId === variant.id);
+    if (storeItem) this.cartService.updateQty(storeItem.id, storeItem.quantity + 1).subscribe();
   }
 
   decrement(): void {
