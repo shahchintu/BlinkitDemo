@@ -75,9 +75,8 @@ import { ImageService } from '../../core/services/image.service';
                   </div>
                   <div class="flex-1 min-w-0">
                     <div class="text-sm font-medium text-gray-800 truncate">{{ product.name }}</div>
-                    <div class="text-xs text-[#666666] flex items-center gap-2">
+                    <div class="text-xs text-[#666666]">
                       <span>{{ product.categoryName }}</span>
-                      <span class="bg-[#0C831F] text-white text-[9px] font-bold px-1 py-0.5 rounded">🕐 8 MINS</span>
                     </div>
                   </div>
                   <div class="text-sm font-semibold text-gray-800 flex-shrink-0">{{ formatPrice(product.price) }}</div>

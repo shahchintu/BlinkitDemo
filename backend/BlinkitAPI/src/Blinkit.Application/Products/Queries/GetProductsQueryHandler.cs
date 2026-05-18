@@ -32,27 +32,26 @@ public class GetProductsQueryHandler(IBlinkitDbContext db)
                 (v.DiscountPrice ?? v.Price) >= request.MinPrice &&
                 (v.DiscountPrice ?? v.Price) <= request.MaxPrice));
 
-        query = request.SortBy switch {
+        // EF Core cannot translate a nested OrderBy inside a correlated subquery used as a sort key.
+        // Use Min/Max aggregates instead — these translate cleanly to SQL MIN(...) / MAX(...).
+        query = request.SortBy switch
+        {
             "price_asc" => query.OrderBy(p =>
                 p.Variants
                     .Where(v => v.IsActive)
-                    .OrderBy(v => v.DisplayOrder)
-                    .Select(v => v.DiscountPrice ?? v.Price)
-                    .FirstOrDefault()),
+                    .Min(v => v.DiscountPrice ?? v.Price)),
 
             "price_desc" => query.OrderByDescending(p =>
                 p.Variants
                     .Where(v => v.IsActive)
-                    .OrderBy(v => v.DisplayOrder)
-                    .Select(v => v.DiscountPrice ?? v.Price)
-                    .FirstOrDefault()),
+                    .Max(v => v.DiscountPrice ?? v.Price)),
+
+            "name_asc" => query.OrderBy(p => p.Name),
 
             "discount" => query.OrderByDescending(p =>
                 p.Variants
                     .Where(v => v.IsActive && v.DiscountPrice.HasValue)
-                    .OrderBy(v => v.DisplayOrder)
-                    .Select(v => (v.Price - v.DiscountPrice!.Value) / v.Price * 100)
-                    .FirstOrDefault()),
+                    .Max(v => (v.Price - v.DiscountPrice!.Value) / v.Price * 100)),
 
             _ => query.OrderBy(p => p.Name)
         };

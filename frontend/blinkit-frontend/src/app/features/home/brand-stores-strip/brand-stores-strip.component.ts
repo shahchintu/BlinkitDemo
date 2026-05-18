@@ -8,8 +8,8 @@ interface Brand { name: string; slug: string; emoji: string; bg: string; }
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="px-4 mt-6 mb-4">
-      <h2 class="text-lg font-bold mb-3">Brand Stores</h2>
+    <div class="px-4 mt-6 mb-4 max-w-[1400px] mx-auto">
+      <h2 class="text-[22px] font-bold text-[#1A1A1A] mb-3">Brand Stores</h2>
       <div class="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
         @for (brand of brands; track brand.slug) {
           <button

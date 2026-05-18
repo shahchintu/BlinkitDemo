@@ -57,6 +57,10 @@ export class AuthService {
     );
   }
 
+  resetPassword(email: string, newPassword: string, confirmPassword: string): Observable<void> {
+    return this.http.post<void>('/api/auth/reset-password', { email, newPassword, confirmPassword });
+  }
+
   getMe(): Observable<IUser> {
     return this.http.get<IUser>('/api/auth/me').pipe(
       tap(user => this.authStore.setAuth(user, this.authStore.accessToken() ?? ''))

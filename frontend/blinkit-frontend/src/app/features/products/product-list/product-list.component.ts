@@ -1,7 +1,9 @@
 import {
-  ChangeDetectionStrategy, Component, inject, OnInit, signal,
+  ChangeDetectionStrategy, Component, inject, signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subject, switchMap } from 'rxjs';
 import { MatIconModule } from '@angular/material/icon';
 import { ProductService } from '../../../core/services/product.service';
 import { ICategory, IProduct } from '../../../core/models';
@@ -134,7 +136,7 @@ import { FilterSidebarComponent, FilterState } from './filter-sidebar/filter-sid
     }
   `,
 })
-export class ProductListComponent implements OnInit {
+export class ProductListComponent {
   private readonly productService = inject(ProductService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -146,7 +148,7 @@ export class ProductListComponent implements OnInit {
   readonly totalPages = signal(0);
   readonly currentPage = signal(1);
   readonly pageSize = 20;
-  
+
   readonly searchQuery = signal('');
   readonly activeCategoryName = signal('');
   readonly mobileFilterOpen = signal(false);
@@ -159,87 +161,108 @@ export class ProductListComponent implements OnInit {
     sortBy: 'relevance',
   });
 
-  private isNavigating = false;
+  // Subject used to funnel every fetch request through switchMap so that
+  // in-flight requests are cancelled when a new one arrives.
+  private readonly fetch$ = new Subject<void>();
 
-  ngOnInit(): void {
-    this.productService.getCategories().subscribe(cats => this.categories.set(cats));
+  constructor() {
+    // Load categories once.
+    this.productService
+      .getCategories()
+      .pipe(takeUntilDestroyed())
+      .subscribe(cats => this.categories.set(cats));
 
-    this.route.queryParamMap.subscribe(params => {
-      if (this.isNavigating) {
-        this.isNavigating = false;
-        return;
-      }
-      const q = params.get('q') ?? '';
-      const catId = params.get('category') ?? null;
-      const sortBy = (params.get('sortBy') as FilterState['sortBy']) || 'relevance';
-      const page = parseInt(params.get('page') ?? '1', 10);
-      
-      this.searchQuery.set(q);
-      this.currentPage.set(page);
-      this.currentFilters.set({
-        categoryId: catId,
-        minPrice: 0,
-        maxPrice: 2000,
-        sortBy: sortBy
+    // Wire the fetch pipeline: switchMap cancels any in-flight HTTP request
+    // whenever a new fetch$ emission arrives.
+    this.fetch$
+      .pipe(
+        switchMap(() => {
+          this.isLoading.set(true);
+          const filters = this.currentFilters();
+          return this.productService.getProducts({
+            search: this.searchQuery() || undefined,
+            categoryId: filters.categoryId ?? undefined,
+            page: this.currentPage(),
+            pageSize: this.pageSize,
+            sortBy: filters.sortBy,
+            minPrice: filters.minPrice,
+            maxPrice: filters.maxPrice,
+          });
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe({
+        next: (result) => {
+          this.products.set(result.items);
+          this.totalCount.set(result.totalCount);
+          this.totalPages.set(result.totalPages);
+
+          const cat = this.categories().find(
+            c => c.id === this.currentFilters().categoryId,
+          );
+          this.activeCategoryName.set(cat ? cat.name : '');
+          this.isLoading.set(false);
+        },
+        error: () => this.isLoading.set(false),
       });
-      
-      this.fetchProducts();
-    });
-  }
 
-  fetchProducts(): void {
-    this.isLoading.set(true);
-    const filters = this.currentFilters();
-    
-    this.productService.getProducts({
-      search: this.searchQuery() || undefined,
-      categoryId: filters.categoryId ?? undefined,
-      page: this.currentPage(),
-      pageSize: this.pageSize,
-      sortBy: filters.sortBy,
-      minPrice: filters.minPrice,
-      maxPrice: filters.maxPrice
-    }).subscribe({
-      next: (result) => {
-        this.products.set(result.items);
-        this.totalCount.set(result.totalCount);
-        this.totalPages.set(result.totalPages);
-        
-        const cat = this.categories().find(c => c.id === filters.categoryId);
-        this.activeCategoryName.set(cat ? cat.name : '');
-        
-        this.isLoading.set(false);
-      },
-      error: () => this.isLoading.set(false),
-    });
+    // Read URL params and trigger a fetch whenever the route query-params
+    // change (direct link, browser back/forward, search bar navigation, etc.).
+    // The previous isNavigating boolean flag is removed: the fetch$ Subject +
+    // switchMap already prevents double work by cancelling superseded requests.
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed())
+      .subscribe(params => {
+        const q = params.get('q') ?? '';
+        const catId = params.get('category') ?? null;
+        const validSortValues: FilterState['sortBy'][] = [
+          'relevance', 'price_asc', 'price_desc', 'name_asc', 'discount',
+        ];
+        const rawSort = params.get('sortBy') ?? 'relevance';
+        const sortBy: FilterState['sortBy'] = (validSortValues as string[]).includes(rawSort)
+          ? (rawSort as FilterState['sortBy'])
+          : 'relevance';
+        const page = parseInt(params.get('page') ?? '1', 10);
+
+        this.searchQuery.set(q);
+        this.currentPage.set(page);
+        this.currentFilters.set({
+          categoryId: catId,
+          minPrice: 0,
+          maxPrice: 2000,
+          sortBy,
+        });
+
+        this.fetch$.next();
+      });
   }
 
   onFiltersChanged(newFilters: FilterState): void {
     this.currentFilters.set(newFilters);
     this.currentPage.set(1);
+    // Navigating updates the URL which triggers queryParamMap, which in turn
+    // calls fetch$.next(). No separate fetch$.next() call is needed here.
     this.updateUrlParams();
-    this.fetchProducts();
   }
 
   onPageChange(page: number): void {
     this.currentPage.set(page);
     this.updateUrlParams();
-    this.fetchProducts();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   updateUrlParams(): void {
-    this.isNavigating = true;
+    const filters = this.currentFilters();
     this.router.navigate([], {
       queryParams: {
-        category: this.currentFilters().categoryId,
-        sortBy: this.currentFilters().sortBy !== 'relevance' 
-          ? this.currentFilters().sortBy : null,
+        q: this.searchQuery() || null,
+        category: filters.categoryId,
+        sortBy: filters.sortBy !== 'relevance' ? filters.sortBy : null,
         page: this.currentPage() > 1 ? this.currentPage() : null,
-        q: this.searchQuery() || null
       },
-      queryParamsHandling: 'merge',
-      replaceUrl: true
+      // No queryParamsHandling: 'merge' — always write the full set of params
+      // so stale params from a previous URL state are never preserved.
+      replaceUrl: true,
     });
   }
 

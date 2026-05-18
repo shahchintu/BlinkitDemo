@@ -76,6 +76,33 @@ public class AuthController(IMediator mediator) : ControllerBase
         return NoContent();
     }
 
+    /// <summary>Reset a user's password directly (no email verification — demo flow).</summary>
+    [AllowAnonymous]
+    [HttpPost("reset-password")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        try
+        {
+            await mediator.Send(new ResetPasswordCommand(request.Email, request.NewPassword, request.ConfirmPassword));
+            return Ok(new { message = "Password reset successfully" });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (ApplicationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [Authorize]
     [HttpGet("me")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]

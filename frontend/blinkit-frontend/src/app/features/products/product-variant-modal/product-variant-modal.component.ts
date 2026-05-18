@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { CartStore } from '../../../core/stores/cart.store';
+import { ImageService } from '../../../core/services/image.service';
 import { IProduct, IProductVariant } from '../../../core/models';
 import { formatPrice, getCategoryFallback } from '../../../shared/utils';
 
@@ -28,7 +29,7 @@ import { formatPrice, getCategoryFallback } from '../../../shared/utils';
             <!-- Image -->
             <div class="w-16 h-16 rounded-xl bg-gray-50 border border-[#E0E0E0] flex-shrink-0 overflow-hidden">
               <img
-                [src]="variant.imageUrl || product.imageUrl"
+                [src]="variantImages()[variant.id] || variant.imageUrl || product.imageUrl"
                 [alt]="variant.unit"
                 class="w-full h-full object-contain p-1"
                 loading="lazy"
@@ -90,12 +91,26 @@ import { formatPrice, getCategoryFallback } from '../../../shared/utils';
     </div>
   `,
 })
-export class ProductVariantModalComponent {
+export class ProductVariantModalComponent implements OnInit {
   readonly product = inject<IProduct>(MAT_DIALOG_DATA);
   readonly cartStore = inject(CartStore);
   private readonly dialogRef = inject(MatDialogRef<ProductVariantModalComponent>);
+  private readonly imageService = inject(ImageService);
 
   readonly fmt = formatPrice;
+  readonly variantImages = signal<Record<string, string>>({});
+
+  ngOnInit(): void {
+    this.product.variants.forEach(variant => {
+      this.imageService.getProductImage(
+        this.product.name,
+        this.product.categoryName,
+        variant.id,
+      ).subscribe(url => {
+        if (url) this.variantImages.update(prev => ({ ...prev, [variant.id]: url }));
+      });
+    });
+  }
 
   discount(price: number, discountPrice: number): number {
     return Math.round(((price - discountPrice) / price) * 100);

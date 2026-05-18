@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import {
   BehaviorSubject,
   catchError,
+  finalize,
   forkJoin,
   map,
   Observable,
@@ -61,10 +62,18 @@ export class CartService {
   private readonly cartSubject = new BehaviorSubject<CartDto>({ items: [], subTotal: 0, itemCount: 0 });
   readonly cart$ = this.cartSubject.asObservable();
 
+  // Prevents the effect's loadCart() from racing with mergeGuestCartAfterLogin().
+  // Set to true at the start of merge, reset to false in finalize().
+  private _merging = false;
+
   constructor() {
     effect(() => {
       if (this.authStore.isAuthenticated()) {
-        this.loadCart().subscribe();
+        // Skip if mergeGuestCartAfterLogin() is already in progress —
+        // it will call loadCart() itself when done.
+        if (!this._merging) {
+          this.loadCart().subscribe();
+        }
       } else {
         const guestItems = this.readGuestItems();
         this.cartStore.setItems(guestItems);
@@ -210,6 +219,11 @@ export class CartService {
       return this.loadCart();
     }
 
+    // Block the CartService effect from calling loadCart() until the
+    // posts + final loadCart() complete, preventing a race that would
+    // overwrite the store with the pre-merge (empty) server cart.
+    this._merging = true;
+
     const posts = guestItems.map(item =>
       this.http.post<CartDto>('/api/cart/items', {
         productId: item.productId,
@@ -221,6 +235,7 @@ export class CartService {
     return forkJoin(posts).pipe(
       switchMap(() => this.loadCart()),
       map(() => void 0),
+      finalize(() => { this._merging = false; }),
     );
   }
 

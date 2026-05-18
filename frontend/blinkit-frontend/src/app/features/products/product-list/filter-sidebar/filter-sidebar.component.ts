@@ -7,7 +7,7 @@ export interface FilterState {
   categoryId: string | null;
   minPrice: number;
   maxPrice: number;
-  sortBy: 'relevance' | 'price_asc' | 'price_desc' | 'discount';
+  sortBy: 'relevance' | 'price_asc' | 'price_desc' | 'name_asc' | 'discount';
 }
 
 @Component({
@@ -100,7 +100,7 @@ export class FilterSidebarComponent implements OnChanges {
   @Output() filtersChanged = new EventEmitter<FilterState>();
 
   selectedCategoryId = signal<string | null>(null);
-  selectedSort = signal<string>('relevance');
+  selectedSort = signal<FilterState['sortBy']>('relevance');
   minPrice = signal<number>(0);
   maxPrice = signal<number>(2000);
 
@@ -108,7 +108,8 @@ export class FilterSidebarComponent implements OnChanges {
     { label: 'Relevance',          value: 'relevance' },
     { label: 'Price: Low to High', value: 'price_asc' },
     { label: 'Price: High to Low', value: 'price_desc' },
-    { label: 'Discount %',         value: 'discount' },
+    { label: 'Name: A to Z',       value: 'name_asc' },
+    { label: 'Discount',           value: 'discount' },
   ];
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -143,7 +144,7 @@ export class FilterSidebarComponent implements OnChanges {
     this.emitFilters();
   }
 
-  selectSort(sort: string): void {
+  selectSort(sort: FilterState['sortBy']): void {
     this.selectedSort.set(sort);
     this.emitFilters();
   }
@@ -161,7 +162,7 @@ export class FilterSidebarComponent implements OnChanges {
       categoryId: this.selectedCategoryId(),
       minPrice: this.minPrice(),
       maxPrice: this.maxPrice(),
-      sortBy: this.selectedSort() as FilterState['sortBy']
+      sortBy: this.selectedSort(),
     });
   }
 }

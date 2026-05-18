@@ -1,11 +1,1 @@
-{
-  "Version": 1,
-  "Hash": "+a6ZNIiD5x8dva1ETakZGswkbx0fZkPCxZ/MPkEcpiU=",
-  "Source": "Blinkit.API",
-  "BasePath": "_content/Blinkit.API",
-  "Mode": "Default",
-  "ManifestType": "Build",
-  "ReferencedProjectsConfiguration": [],
-  "DiscoveryPatterns": [],
-  "Assets": []
-}
+{"Version":1,"Hash":"PIC3i5ve+kt/lWFQEVDOt/WpJbj2YiOH0GcStBOYaWg=","Source":"Blinkit.API","BasePath":"_content/Blinkit.API","Mode":"Default","ManifestType":"Build","ReferencedProjectsConfiguration":[],"DiscoveryPatterns":[],"Assets":[],"Endpoints":[]}

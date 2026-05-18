@@ -9,13 +9,13 @@ interface OfferCard { title: string; sub: string; code: string; bg: string; }
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink],
   template: `
-    <div class="px-4 mt-6">
-      <h2 class="text-lg font-bold mb-3">Top Offers</h2>
-      <div class="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
+    <div class="px-4 mt-6 max-w-[1400px] mx-auto">
+      <h2 class="text-[22px] font-bold text-[#1A1A1A] mb-3">Top Offers</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
         @for (offer of offers; track offer.code) {
           <a
             routerLink="/offers"
-            class="flex-shrink-0 w-52 rounded-2xl p-4 text-white hover:opacity-90 transition-opacity cursor-pointer"
+            class="rounded-2xl p-4 text-white hover:opacity-90 transition-opacity cursor-pointer"
             [style.background]="offer.bg"
           >
             <div class="text-base font-bold leading-tight">{{ offer.title }}</div>

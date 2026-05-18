@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
 import { AuthService } from '../../../core/services/auth.service';
 import { AuthStore } from '../../../core/stores/auth.store';
+import { ForgotPasswordDialogComponent } from '../../../shared/forgot-password-dialog/forgot-password-dialog.component';
 
 @Component({
   selector: 'app-login',
@@ -52,6 +54,15 @@ import { AuthStore } from '../../../core/stores/auth.store';
             }
           </div>
 
+          <!-- Forgot password -->
+          <div class="flex justify-end -mt-2">
+            <button
+              type="button"
+              class="text-[13px] text-[#0C831F] font-semibold hover:underline"
+              (click)="openForgotPassword()"
+            >Forgot password?</button>
+          </div>
+
           <!-- Error message -->
           @if (errorMessage()) {
             <div class="bg-red-50 border border-[#F44336] rounded-[10px] px-4 py-3">
@@ -88,6 +99,7 @@ export class LoginComponent {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly dialog = inject(MatDialog);
   readonly authStore = inject(AuthStore);
 
   readonly errorMessage = signal('');
@@ -96,6 +108,14 @@ export class LoginComponent {
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(6)]],
   });
+
+  openForgotPassword(): void {
+    this.dialog.open(ForgotPasswordDialogComponent, {
+      panelClass: 'rounded-2xl',
+      width: '420px',
+      maxWidth: '95vw',
+    });
+  }
 
   onSubmit(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }

@@ -72,6 +72,10 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
 builder.Services.AddOptions<ResendClientOptions>()
     .Configure<IConfiguration>((opt, cfg) =>
         opt.ApiToken = cfg["Resend:ApiKey"] ?? string.Empty);
+
+// Warn at startup if email is not configured
+if (string.IsNullOrWhiteSpace(builder.Configuration["Resend:ApiKey"]))
+    Console.Error.WriteLine("⚠️  Resend:ApiKey is not configured — order confirmation emails will not be sent.");
 builder.Services.AddHttpClient<ResendClient>();
 builder.Services.AddTransient<IResend>(sp => sp.GetRequiredService<ResendClient>());
 

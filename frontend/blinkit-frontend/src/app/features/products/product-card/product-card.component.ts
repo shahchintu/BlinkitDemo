@@ -18,10 +18,6 @@ import { ProductVariantModalComponent } from '../product-variant-modal/product-v
 
       <!-- Image area -->
       <a [routerLink]="['/product', product.id]" class="relative block h-40 bg-[#F8F8F8] rounded-t-[16px]">
-        <!-- ETA badge -->
-        <div class="absolute top-2 left-2 z-10 flex items-center gap-0.5 bg-[#0C831F] text-white text-[10px] font-bold px-2 py-1 rounded-[6px]">
-          🕐 8 MINS
-        </div>
 
         <!-- Discount badge -->
         @if (product.discountPrice) {
@@ -162,8 +158,9 @@ export class ProductCardComponent implements OnInit {
   openVariantModal(): void {
     this.dialog.open(ProductVariantModalComponent, {
       data: this.product,
-      panelClass: ['rounded-t-2xl', 'w-full', 'max-w-sm'],
-      position: { bottom: '0' },
+      panelClass: 'rounded-2xl',
+      width: '400px',
+      maxWidth: '95vw',
     });
   }
 

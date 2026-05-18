@@ -28,6 +28,7 @@ public class VerifyPaymentCommandHandler(
                 .ThenInclude(i => i.Product)
             .Include(o => o.Items)
                 .ThenInclude(i => i.Variant)
+            .Include(o => o.Address)
             .FirstOrDefaultAsync(o => o.Id == request.OrderId, cancellationToken)
             ?? throw new KeyNotFoundException("Order not found");
 
@@ -69,31 +70,47 @@ public class VerifyPaymentCommandHandler(
 
         await sender.Send(new ClearCartCommand(request.UserId), cancellationToken);
 
-        var itemDtos = order.Items.Select(i => new OrderItemDto
+        var emailItems = order.Items.Select(i => new OrderItemEmailDto
         {
-            Id = i.Id,
-            ProductId = i.ProductId,
             ProductName = i.Product.Name,
-            ProductImageUrl = i.Variant.ImageUrl,
-            VariantId = i.VariantId,
             VariantUnit = i.Variant.Unit,
             Quantity = i.Quantity,
             UnitPrice = i.UnitPrice,
+            TotalPrice = i.UnitPrice * i.Quantity,
         }).ToList();
 
-        var capturedEmail = request.UserEmail;
-        var capturedName = request.CustomerName;
-        var capturedOrderId = order.Id;
-        var capturedTotal = order.TotalAmount;
-        var capturedFee = order.DeliveryFee;
+        var address = order.Address;
+        var deliveryAddress = address is not null
+            ? $"{address.Street}, {address.City} - {address.Pincode}"
+            : "Not available";
+
+        var capturedEmail       = request.UserEmail;
+        var capturedName        = request.CustomerName;
+        var capturedOrderId     = order.Id.ToString();
+        var capturedSubTotal    = order.SubTotal;
+        var capturedFee         = order.DeliveryFee;
+        var capturedDiscount    = order.CouponDiscount;
+        var capturedTotal       = order.TotalAmount;
+        var capturedCoupon      = order.CouponCode;
+        var capturedAddress     = deliveryAddress;
+        const string deliverySlot = "Express Delivery (~10 mins)";
 
         _ = Task.Run(async () =>
         {
             try
             {
                 await emailService.SendOrderConfirmationAsync(
-                    capturedEmail, capturedName, capturedOrderId,
-                    capturedTotal, capturedFee, itemDtos);
+                    capturedEmail,
+                    capturedName,
+                    capturedOrderId,
+                    capturedSubTotal,
+                    capturedFee,
+                    capturedDiscount,
+                    capturedTotal,
+                    capturedCoupon,
+                    emailItems,
+                    capturedAddress,
+                    deliverySlot);
             }
             catch { }
         }, CancellationToken.None);

@@ -42,7 +42,7 @@ export interface ProductFilters {
   categoryId?: string;
   page?: number;
   pageSize?: number;
-  sortBy?: 'relevance' | 'price_asc' | 'price_desc' | 'discount';
+  sortBy?: 'relevance' | 'price_asc' | 'price_desc' | 'name_asc' | 'discount';
   minPrice?: number;
   maxPrice?: number;
 }
