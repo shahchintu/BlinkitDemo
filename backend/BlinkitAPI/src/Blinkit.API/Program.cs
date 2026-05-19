@@ -140,6 +140,9 @@ using (var scope = app.Services.CreateScope())
             if (!await roleManager.RoleExistsAsync(role))
                 await roleManager.CreateAsync(new IdentityRole(role));
 
+        // Seed products for categories that have none (runs once per missing category).
+        await SeedData.SeedMissingCategoryProductsAsync(db);
+
         // Data-fix: ensure every active product has at least one active variant.
         // Products with zero variants break the Angular ADD button (variants[0] is falsy).
         await SeedData.FixZeroVariantProductsAsync(db);

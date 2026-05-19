@@ -9,12 +9,13 @@ import { CartService } from '../../../core/services/cart.service';
 import { IProduct, IProductVariant } from '../../../core/models';
 import { formatPrice, getCategoryFallback } from '../../../shared/utils';
 import { ProductCardComponent } from '../product-card/product-card.component';
+import { ScrollableRowComponent } from '../../../shared/components/scrollable-row/scrollable-row.component';
 
 @Component({
   selector: 'app-product-detail',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ProductCardComponent],
+  imports: [RouterLink, ProductCardComponent, ScrollableRowComponent],
   template: `
     <div class="bg-[#F8F8F8] min-h-screen">
 
@@ -215,13 +216,13 @@ import { ProductCardComponent } from '../product-card/product-card.component';
                   <span class="text-xs text-[#666666]">More in {{ product()!.relatedTags[0] }}</span>
                 }
               </div>
-              <div class="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
+              <app-scrollable-row [scrollAmount]="500">
                 @for (rp of relatedProducts(); track rp.id) {
-                  <div class="w-44 flex-shrink-0">
+                  <div class="w-[160px] flex-shrink-0">
                     <app-product-card [product]="rp" />
                   </div>
                 }
-              </div>
+              </app-scrollable-row>
             </div>
           }
 

@@ -7,6 +7,7 @@ import { CategoryStripComponent } from './category-strip/category-strip.componen
 import { OffersStripComponent } from './offers-strip/offers-strip.component';
 import { BrandStoresStripComponent } from './brand-stores-strip/brand-stores-strip.component';
 import { ProductCardComponent } from '../products/product-card/product-card.component';
+import { ScrollableRowComponent } from '../../shared/components/scrollable-row/scrollable-row.component';
 
 interface CategorySection {
   category: ICategory;
@@ -25,6 +26,7 @@ interface CategorySection {
     OffersStripComponent,
     BrandStoresStripComponent,
     ProductCardComponent,
+    ScrollableRowComponent,
   ],
   template: `
     <div class="bg-[#F8F8F8] min-h-screen pb-8">
@@ -38,41 +40,49 @@ interface CategorySection {
 
             <!-- Section header -->
             <div class="flex items-center justify-between px-4 mb-3">
-              <h2 class="text-[20px] font-bold text-[#1A1A1A]">
-                {{ section.category.name }}
-              </h2>
+              <div class="flex items-center gap-2">
+                <h2 class="text-[20px] font-bold text-[#1A1A1A]">
+                  {{ section.category.name }}
+                </h2>
+                @if (!section.isLoading && section.products.length > 0) {
+                  <span class="text-[13px] text-[#999] font-medium">
+                    {{ section.products.length }} items
+                  </span>
+                }
+              </div>
               <a [routerLink]="['/products']"
                  [queryParams]="{ category: section.category.id }"
                  class="flex items-center gap-0.5 text-[14px]
-                        font-semibold text-[#0C831F] hover:underline transition">
+                        font-semibold text-[#0C831F] hover:underline
+                        transition cursor-pointer">
                 See all
-                <span class="material-icons text-[16px]">chevron_right</span>
+                <span class="material-icons text-[18px]">chevron_right</span>
               </a>
             </div>
 
             <!-- Skeleton loading -->
             @if (section.isLoading) {
-              <div class="flex gap-3 px-4 overflow-x-auto scrollbar-hide pb-2">
+              <app-scrollable-row>
                 @for (i of skeletons; track $index) {
                   <div class="w-[175px] flex-shrink-0">
                     <div class="skeleton h-[160px] rounded-[16px] mb-2"></div>
-                    <div class="skeleton h-3 w-3/4 mb-1"></div>
-                    <div class="skeleton h-4 w-full mb-2"></div>
+                    <div class="skeleton h-3 w-3/4 mb-1 rounded"></div>
+                    <div class="skeleton h-4 w-full mb-2 rounded"></div>
                     <div class="skeleton h-8 w-full rounded-[8px]"></div>
                   </div>
                 }
-              </div>
+              </app-scrollable-row>
             }
 
             <!-- Products horizontal scroll -->
             @if (!section.isLoading && section.products.length > 0) {
-              <div class="flex gap-3 px-4 overflow-x-auto scrollbar-hide pb-2">
+              <app-scrollable-row [scrollAmount]="600">
                 @for (product of section.products; track product.id) {
                   <div class="w-[175px] flex-shrink-0">
                     <app-product-card [product]="product" />
                   </div>
                 }
-              </div>
+              </app-scrollable-row>
             }
 
           </section>
@@ -89,7 +99,7 @@ export class HomeComponent implements OnInit {
   private readonly router = inject(Router);
 
   readonly categorySections = signal<CategorySection[]>([]);
-  readonly skeletons = Array(5);
+  readonly skeletons = Array(6);
 
   onCategorySelected(categoryId: string | null): void {
     if (categoryId) {

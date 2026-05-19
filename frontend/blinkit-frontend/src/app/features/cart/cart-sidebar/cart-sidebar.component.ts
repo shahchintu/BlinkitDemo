@@ -6,7 +6,7 @@ import {
   signal,
 } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { CartService } from '../../../core/services/cart.service';
@@ -18,12 +18,14 @@ import { ProductService } from '../../../core/services/product.service';
 import { LoginPromptDialogComponent } from '../../../shared/login-prompt-dialog/login-prompt-dialog.component';
 import { ICartItem, ICouponValidation, IProduct } from '../../../core/models';
 import { formatPrice, getCategoryFallback } from '../../../shared/utils';
+import { ScrollableRowComponent } from '../../../shared/components/scrollable-row/scrollable-row.component';
+import { ProductCardComponent } from '../../products/product-card/product-card.component';
 
 @Component({
   selector: 'app-cart-sidebar',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AsyncPipe, RouterLink, FormsModule],
+  imports: [AsyncPipe, FormsModule, ScrollableRowComponent, ProductCardComponent],
   template: `
     @if (cartService.isSidebarOpen$ | async) {
       <!-- Backdrop -->
@@ -197,31 +199,18 @@ import { formatPrice, getCategoryFallback } from '../../../shared/utils';
 
             <!-- Customers also bought -->
             @if (relatedProducts().length > 0) {
-              <div class="px-4 py-3 border-t border-[#F0F0F0]">
-                <h3 class="text-[13px] font-bold text-[#1A1A1A] mb-3">
+              <div class="py-3 border-t border-[#F0F0F0]">
+                <h3 class="text-[13px] font-bold text-[#1A1A1A] mb-3 px-4">
                   You might also like
                 </h3>
-                <div class="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
+                <app-scrollable-row [scrollAmount]="300">
                   @for (rp of relatedProducts(); track rp.id) {
-                    <a [routerLink]="['/product', rp.id]"
-                       (click)="cartService.closeCart()"
-                       class="flex-shrink-0 w-28 bg-[#F8F8F8]
-                              rounded-[12px] p-2 hover:shadow-card
-                              transition">
-                      <img [src]="productImages()[rp.id] || rp.imageUrl"
-                           [alt]="rp.name"
-                           loading="lazy"
-                           class="w-full h-16 object-contain mb-1"
-                           (error)="onImgError($event, rp.categoryName)">
-                      <p class="text-[10px] text-[#1A1A1A] line-clamp-2 leading-tight">
-                        {{ rp.name }}
-                      </p>
-                      <p class="text-[11px] font-bold text-[#0C831F] mt-0.5">
-                        {{ fmt(rp.discountPrice ?? rp.price) }}
-                      </p>
-                    </a>
+                    <div class="w-[140px] flex-shrink-0"
+                         (click)="cartService.closeCart()">
+                      <app-product-card [product]="rp" />
+                    </div>
                   }
-                </div>
+                </app-scrollable-row>
               </div>
             }
 
