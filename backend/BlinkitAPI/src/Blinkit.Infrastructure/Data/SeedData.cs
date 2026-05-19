@@ -3376,6 +3376,25 @@ public static class SeedData
         await db.SaveChangesAsync();
     }
 
+    public static async Task FixInvertedPricesAsync(BlinkitDbContext db)
+    {
+        var invertedVariants = await db.ProductVariants
+            .Where(v => v.DiscountPrice != null && v.DiscountPrice > v.Price)
+            .ToListAsync();
+
+        if (invertedVariants.Count == 0)
+            return;
+
+        foreach (var variant in invertedVariants)
+        {
+            var temp = variant.Price;
+            variant.Price = variant.DiscountPrice.Value;
+            variant.DiscountPrice = temp;
+        }
+
+        await db.SaveChangesAsync();
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static Category Cat(string name, string slug, string iconUrl, int order) =>
@@ -3415,7 +3434,16 @@ public static class SeedData
     private static List<ProductVariant> Vs(params ProductVariant[] variants) => [.. variants];
 
     private static ProductVariant V(string unit, decimal price, decimal? discountPrice, int stock, int order = 0) =>
-        new() { Id = Guid.NewGuid(), Unit = unit, Price = price, DiscountPrice = discountPrice, StockQty = stock, ImageUrl = string.Empty, DisplayOrder = order };
+        new()
+        {
+            Id = Guid.NewGuid(),
+            Unit = unit,
+            Price = discountPrice ?? price,
+            DiscountPrice = discountPrice.HasValue ? price : null,
+            StockQty = stock,
+            ImageUrl = string.Empty,
+            DisplayOrder = order
+        };
 
     private static List<ProductAttribute> As(params ProductAttribute[] attrs) => [.. attrs];
 

@@ -30,8 +30,9 @@ interface CategorySection {
   ],
   template: `
     <div class="bg-[#F8F8F8] min-h-screen pb-8">
-      <app-category-strip (categorySelected)="onCategorySelected($event)" />
       <app-hero-banner />
+      <app-category-strip (categorySelected)="onCategorySelected($event)" />
+
 
       <!-- Category-wise product sections -->
       <div class="max-w-[1400px] mx-auto">

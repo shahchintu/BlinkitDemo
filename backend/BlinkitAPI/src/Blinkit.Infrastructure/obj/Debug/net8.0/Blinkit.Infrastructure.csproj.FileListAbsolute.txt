@@ -12,9 +12,9 @@ H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.Infrastru
 H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.Infrastructure\obj\Debug\net8.0\Blinkit.Infrastructure.AssemblyInfo.cs
 H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.Infrastructure\obj\Debug\net8.0\Blinkit.Infrastructure.csproj.CoreCompileInputs.cache
 H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.Infrastructure\obj\Debug\net8.0\Blinkit.Infrastructure.sourcelink.json
-H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.Infrastructure\obj\Debug\net8.0\Blinkit.Infrastructure.csproj.CopyComplete
 H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.Infrastructure\obj\Debug\net8.0\Blinkit.Infrastructure.dll
 H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.Infrastructure\obj\Debug\net8.0\refint\Blinkit.Infrastructure.dll
 H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.Infrastructure\obj\Debug\net8.0\Blinkit.Infrastructure.pdb
 H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.Infrastructure\obj\Debug\net8.0\Blinkit.Infrastructure.genruntimeconfig.cache
 H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.Infrastructure\obj\Debug\net8.0\ref\Blinkit.Infrastructure.dll
+H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.Infrastructure\obj\Debug\net8.0\Blinkit.Infrastructure.csproj.CopyComplete

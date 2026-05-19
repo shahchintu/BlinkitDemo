@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Blinkit.Application")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+dd57ecd4124c7896cd87bcb0cb62aab77630d5d3")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+10a39b2ea6309e6fbd7daa7399589228914844d0")]
 [assembly: System.Reflection.AssemblyProductAttribute("Blinkit.Application")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Blinkit.Application")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

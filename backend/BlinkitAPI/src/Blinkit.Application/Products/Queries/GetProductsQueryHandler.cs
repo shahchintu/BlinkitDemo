@@ -13,7 +13,7 @@ public class GetProductsQueryHandler(IBlinkitDbContext db)
     {
         var query = db.Products
             .Include(p => p.Category)
-            .Include(p => p.Variants.OrderBy(v => v.DisplayOrder))
+            .Include(p => p.Variants.OrderBy(v => v.DisplayOrder).ThenBy(v => v.DiscountPrice ?? v.Price))
             .Include(p => p.Attributes.OrderBy(a => a.DisplayOrder))
             .Include(p => p.Tags)
             .Include(p => p.Images.OrderBy(i => i.DisplayOrder))
@@ -27,10 +27,18 @@ public class GetProductsQueryHandler(IBlinkitDbContext db)
             query = query.Where(p => p.CategoryId == request.CategoryId.Value);
 
         if (request.MinPrice > 0 || request.MaxPrice < 999999)
-            query = query.Where(p => p.Variants.Any(v =>
-                v.IsActive &&
-                (v.DiscountPrice ?? v.Price) >= request.MinPrice &&
-                (v.DiscountPrice ?? v.Price) <= request.MaxPrice));
+            query = query.Where(p => p.Variants
+                .Where(v => v.IsActive)
+                .OrderBy(v => v.DisplayOrder)
+                .ThenBy(v => v.DiscountPrice ?? v.Price)
+                .Select(v => v.DiscountPrice ?? v.Price)
+                .FirstOrDefault() >= request.MinPrice &&
+                p.Variants
+                .Where(v => v.IsActive)
+                .OrderBy(v => v.DisplayOrder)
+                .ThenBy(v => v.DiscountPrice ?? v.Price)
+                .Select(v => v.DiscountPrice ?? v.Price)
+                .FirstOrDefault() <= request.MaxPrice);
 
         // EF Core cannot translate a nested OrderBy inside a correlated subquery used as a sort key.
         // Use Min/Max aggregates instead — these translate cleanly to SQL MIN(...) / MAX(...).
@@ -39,19 +47,28 @@ public class GetProductsQueryHandler(IBlinkitDbContext db)
             "price_asc" => query.OrderBy(p =>
                 p.Variants
                     .Where(v => v.IsActive)
-                    .Min(v => v.DiscountPrice ?? v.Price)),
+                    .OrderBy(v => v.DisplayOrder)
+                    .ThenBy(v => v.DiscountPrice ?? v.Price)
+                    .Select(v => v.DiscountPrice ?? v.Price)
+                    .FirstOrDefault()),
 
             "price_desc" => query.OrderByDescending(p =>
                 p.Variants
                     .Where(v => v.IsActive)
-                    .Max(v => v.DiscountPrice ?? v.Price)),
+                    .OrderBy(v => v.DisplayOrder)
+                    .ThenBy(v => v.DiscountPrice ?? v.Price)
+                    .Select(v => v.DiscountPrice ?? v.Price)
+                    .FirstOrDefault()),
 
             "name_asc" => query.OrderBy(p => p.Name),
 
             "discount" => query.OrderByDescending(p =>
                 p.Variants
                     .Where(v => v.IsActive && v.DiscountPrice.HasValue)
-                    .Max(v => (v.Price - v.DiscountPrice!.Value) / v.Price * 100)),
+                    .OrderBy(v => v.DisplayOrder)
+                    .ThenBy(v => v.DiscountPrice ?? v.Price)
+                    .Select(v => (v.Price - v.DiscountPrice!.Value) / v.Price * 100)
+                    .FirstOrDefault()),
 
             _ => query.OrderBy(p => p.Name)
         };
@@ -74,6 +91,7 @@ public class GetProductsQueryHandler(IBlinkitDbContext db)
 
         var variants = p.Variants
             .OrderBy(v => v.DisplayOrder)
+            .ThenBy(v => v.DiscountPrice ?? v.Price)
             .Select((v, i) => new ProductVariantDto(
                 v.Id, v.Unit, v.Price, v.DiscountPrice, v.StockQty,
                 string.IsNullOrEmpty(v.ImageUrl) ? firstImageUrl : v.ImageUrl,

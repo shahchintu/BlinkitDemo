@@ -95,24 +95,21 @@ public class VerifyPaymentCommandHandler(
         var capturedAddress     = deliveryAddress;
         const string deliverySlot = "Express Delivery (~10 mins)";
 
-        _ = Task.Run(async () =>
+        try
         {
-            try
-            {
-                await emailService.SendOrderConfirmationAsync(
-                    capturedEmail,
-                    capturedName,
-                    capturedOrderId,
-                    capturedSubTotal,
-                    capturedFee,
-                    capturedDiscount,
-                    capturedTotal,
-                    capturedCoupon,
-                    emailItems,
-                    capturedAddress,
-                    deliverySlot);
-            }
-            catch { }
-        }, CancellationToken.None);
+            await emailService.SendOrderConfirmationAsync(
+                capturedEmail,
+                capturedName,
+                capturedOrderId,
+                capturedSubTotal,
+                capturedFee,
+                capturedDiscount,
+                capturedTotal,
+                capturedCoupon,
+                emailItems,
+                capturedAddress,
+                deliverySlot);
+        }
+        catch { }
     }
 }

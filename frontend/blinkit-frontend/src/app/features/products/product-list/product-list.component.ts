@@ -223,13 +223,15 @@ export class ProductListComponent {
           ? (rawSort as FilterState['sortBy'])
           : 'relevance';
         const page = parseInt(params.get('page') ?? '1', 10);
+        const minPrice = params.get('minPrice') ? parseInt(params.get('minPrice')!, 10) : 0;
+        const maxPrice = params.get('maxPrice') ? parseInt(params.get('maxPrice')!, 10) : 2000;
 
         this.searchQuery.set(q);
         this.currentPage.set(page);
         this.currentFilters.set({
           categoryId: catId,
-          minPrice: 0,
-          maxPrice: 2000,
+          minPrice,
+          maxPrice,
           sortBy,
         });
 
@@ -258,6 +260,8 @@ export class ProductListComponent {
         q: this.searchQuery() || null,
         category: filters.categoryId,
         sortBy: filters.sortBy !== 'relevance' ? filters.sortBy : null,
+        minPrice: filters.minPrice > 0 ? filters.minPrice : null,
+        maxPrice: filters.maxPrice < 2000 ? filters.maxPrice : null,
         page: this.currentPage() > 1 ? this.currentPage() : null,
       },
       // No queryParamsHandling: 'merge' — always write the full set of params

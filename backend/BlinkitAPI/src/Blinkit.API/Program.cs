@@ -147,6 +147,9 @@ using (var scope = app.Services.CreateScope())
         // Products with zero variants break the Angular ADD button (variants[0] is falsy).
         await SeedData.FixZeroVariantProductsAsync(db);
     }
+
+    // Always run data-fix to resolve inverted prices
+    await SeedData.FixInvertedPricesAsync(db);
 }
 
 // Global exception handler — must be first

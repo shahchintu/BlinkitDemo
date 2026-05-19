@@ -29,13 +29,24 @@ public class CreateProductCommandHandler(IBlinkitDbContext db) : IRequestHandler
         await db.Products.AddAsync(product, ct);
 
         foreach (var (v, idx) in req.Variants.Select((v, i) => (v, i)))
+        {
+            var basePrice = v.Price;
+            var promoPrice = v.DiscountPrice;
+            if (promoPrice.HasValue && promoPrice.Value > basePrice)
+            {
+                var temp = basePrice;
+                basePrice = promoPrice.Value;
+                promoPrice = temp;
+            }
+
             await db.ProductVariants.AddAsync(new ProductVariant
             {
-                Id = v.Id ?? Guid.NewGuid(), ProductId = id, Unit = v.Unit, Price = v.Price,
-                DiscountPrice = v.DiscountPrice, StockQty = v.StockQty,
+                Id = v.Id ?? Guid.NewGuid(), ProductId = id, Unit = v.Unit, Price = basePrice,
+                DiscountPrice = promoPrice, StockQty = v.StockQty,
                 ImageUrl = v.ImageUrl, DisplayOrder = v.DisplayOrder > 0 ? v.DisplayOrder : idx + 1,
                 IsActive = true,
             }, ct);
+        }
 
         foreach (var a in req.Attributes)
             await db.ProductAttributes.AddAsync(new ProductAttribute
@@ -88,12 +99,21 @@ public class UpdateProductCommandHandler(IBlinkitDbContext db) : IRequestHandler
 
         foreach (var (v, idx) in req.Variants.Select((v, i) => (v, i)))
         {
+            var basePrice = v.Price;
+            var promoPrice = v.DiscountPrice;
+            if (promoPrice.HasValue && promoPrice.Value > basePrice)
+            {
+                var temp = basePrice;
+                basePrice = promoPrice.Value;
+                promoPrice = temp;
+            }
+
             if (v.Id.HasValue)
             {
                 var existing = product.Variants.FirstOrDefault(ev => ev.Id == v.Id.Value);
                 if (existing != null)
                 {
-                    existing.Unit = v.Unit; existing.Price = v.Price; existing.DiscountPrice = v.DiscountPrice;
+                    existing.Unit = v.Unit; existing.Price = basePrice; existing.DiscountPrice = promoPrice;
                     existing.StockQty = v.StockQty; existing.ImageUrl = v.ImageUrl;
                     existing.DisplayOrder = v.DisplayOrder > 0 ? v.DisplayOrder : idx + 1;
                     continue;
@@ -102,8 +122,8 @@ public class UpdateProductCommandHandler(IBlinkitDbContext db) : IRequestHandler
 
             await db.ProductVariants.AddAsync(new ProductVariant
             {
-                Id = v.Id ?? Guid.NewGuid(), ProductId = req.Id, Unit = v.Unit, Price = v.Price,
-                DiscountPrice = v.DiscountPrice, StockQty = v.StockQty,
+                Id = v.Id ?? Guid.NewGuid(), ProductId = req.Id, Unit = v.Unit, Price = basePrice,
+                DiscountPrice = promoPrice, StockQty = v.StockQty,
                 ImageUrl = v.ImageUrl, DisplayOrder = v.DisplayOrder > 0 ? v.DisplayOrder : idx + 1,
                 IsActive = true,
             }, ct);
@@ -167,10 +187,19 @@ public class AddVariantCommandHandler(IBlinkitDbContext db) : IRequestHandler<Ad
     public async Task<Guid> Handle(AddVariantCommand req, CancellationToken ct)
     {
         var id = Guid.NewGuid();
+        var basePrice = req.Variant.Price;
+        var promoPrice = req.Variant.DiscountPrice;
+        if (promoPrice.HasValue && promoPrice.Value > basePrice)
+        {
+            var temp = basePrice;
+            basePrice = promoPrice.Value;
+            promoPrice = temp;
+        }
+
         await db.ProductVariants.AddAsync(new ProductVariant
         {
             Id = id, ProductId = req.ProductId, Unit = req.Variant.Unit,
-            Price = req.Variant.Price, DiscountPrice = req.Variant.DiscountPrice,
+            Price = basePrice, DiscountPrice = promoPrice,
             StockQty = req.Variant.StockQty, ImageUrl = req.Variant.ImageUrl,
             DisplayOrder = req.Variant.DisplayOrder, IsActive = true,
         }, ct);
@@ -187,8 +216,18 @@ public class UpdateVariantCommandHandler(IBlinkitDbContext db) : IRequestHandler
     {
         var v = await db.ProductVariants.FindAsync([req.VariantId], ct)
             ?? throw new KeyNotFoundException("Variant not found");
-        v.Unit = req.Variant.Unit; v.Price = req.Variant.Price;
-        v.DiscountPrice = req.Variant.DiscountPrice; v.StockQty = req.Variant.StockQty;
+
+        var basePrice = req.Variant.Price;
+        var promoPrice = req.Variant.DiscountPrice;
+        if (promoPrice.HasValue && promoPrice.Value > basePrice)
+        {
+            var temp = basePrice;
+            basePrice = promoPrice.Value;
+            promoPrice = temp;
+        }
+
+        v.Unit = req.Variant.Unit; v.Price = basePrice;
+        v.DiscountPrice = promoPrice; v.StockQty = req.Variant.StockQty;
         v.ImageUrl = req.Variant.ImageUrl; v.DisplayOrder = req.Variant.DisplayOrder;
         await db.SaveChangesAsync(ct);
     }
