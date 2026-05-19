@@ -54,7 +54,7 @@ import { FilterSidebarComponent, FilterState } from './filter-sidebar/filter-sid
         </div>
 
         <!-- Product grid -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
           @if (isLoading()) {
             @for (_ of skeletons; track $index) {
               <div class="rounded-2xl border border-[#E0E0E0] overflow-hidden animate-pulse">

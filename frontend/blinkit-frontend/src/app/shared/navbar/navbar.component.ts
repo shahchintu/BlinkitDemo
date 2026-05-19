@@ -17,126 +17,157 @@ interface UserLocation { city: string; state: string; pincode: string; }
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, SearchBarComponent],
   template: `
-    <header class="sticky top-0 z-50 bg-white border-b border-[#E0E0E0] shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
-      <div class="flex items-center gap-4 h-16 max-w-[1200px] mx-auto px-4">
+    <nav class="sticky top-0 z-50 bg-white
+                border-b border-[#F0F0F0]
+                shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+      <div class="max-w-[1400px] mx-auto px-4
+                  h-[64px] flex items-center gap-4">
 
         <!-- Logo -->
         <a routerLink="/" class="flex-shrink-0">
-          <div class="bg-[#F8C200] px-3 py-1 rounded-lg">
-            <span class="text-[#0C831F] italic font-black text-2xl tracking-tight">blinkit</span>
+          <div class="bg-[#F8C200] rounded-[10px]
+                      px-3 py-1.5 cursor-pointer
+                      hover:opacity-90 transition">
+            <span class="text-[#0C831F] font-black
+                         italic text-[22px] leading-none">
+              blinkit
+            </span>
           </div>
         </a>
 
-        <!-- Location pill -->
-        <button
-          class="flex flex-col items-start ml-1 cursor-pointer flex-shrink-0 hover:opacity-80 transition-opacity"
-          (click)="openLocationSelector()"
-        >
-          <span class="text-[11px] font-bold text-[#1A1A1A] leading-none">Delivery in 8 minutes</span>
+        <!-- Location -->
+        <div class="flex-shrink-0 cursor-pointer
+                    hover:opacity-80 transition"
+             (click)="openLocationSelector()">
+          <p class="text-[11px] font-bold text-[#1A1A1A] leading-tight">
+            Delivery in 8 minutes
+          </p>
           <div class="flex items-center gap-0.5 mt-0.5">
-            <span class="text-[13px] font-semibold text-[#1A1A1A] leading-none">{{ locationLabel() }}</span>
-            <svg class="w-3 h-3 text-[#1A1A1A]" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M7 10l5 5 5-5z"/>
-            </svg>
+            <span class="text-[13px] font-semibold text-[#1A1A1A]
+                         max-w-[140px] truncate">
+              {{ locationLabel() }}
+            </span>
+            <span class="material-icons text-[16px] text-[#666]">expand_more</span>
           </div>
-        </button>
+        </div>
 
         <!-- Search bar -->
-        <div class="flex-1 max-w-[600px] mx-2 hidden md:block">
+        <div class="flex-1 max-w-[640px] mx-2 hidden md:block">
           <app-search-bar />
         </div>
 
         <!-- Right side -->
-        <div class="flex items-center gap-3 ml-auto">
+        <div class="flex items-center gap-2 flex-shrink-0 ml-auto">
 
           @if (!authStore.isAuthenticated()) {
-            <!-- Not logged in -->
             <button
-              class="border border-[#1A1A1A] rounded-[8px] px-5 h-[40px] text-[14px] font-semibold text-[#1A1A1A] hover:bg-[#F8F8F8] transition-colors"
-              (click)="onLogin()"
-            >Login</button>
-
+              class="border-2 border-[#1A1A1A] rounded-[10px]
+                     px-5 h-[40px] text-[14px] font-semibold
+                     text-[#1A1A1A] hover:bg-[#F8F8F8]
+                     transition btn-press"
+              (click)="onLogin()">
+              Login
+            </button>
           } @else {
-            <!-- Logged in: Account dropdown -->
+            <!-- Account dropdown -->
             <div class="relative">
-
-              <!-- Account trigger button -->
               <button
-                class="flex items-center gap-1.5 cursor-pointer hover:text-[#0C831F] transition"
-                (click)="toggleDropdown()"
-              >
-                <span class="text-[15px] font-semibold text-[#1A1A1A]">Account</span>
-                <span class="material-icons text-[18px] leading-none text-[#666666]">expand_more</span>
+                class="flex items-center gap-1.5 px-3 h-[40px]
+                       rounded-[10px] hover:bg-[#F8F8F8]
+                       transition cursor-pointer"
+                (click)="toggleDropdown()">
+                <div class="w-8 h-8 rounded-full bg-[#0C831F]
+                            flex items-center justify-center flex-shrink-0">
+                  <span class="text-white text-[13px] font-bold">
+                    {{ getInitials() }}
+                  </span>
+                </div>
+                <span class="text-[14px] font-semibold text-[#1A1A1A]
+                             max-w-[80px] truncate hidden md:block">
+                  {{ authStore.currentUser()?.fullName?.split(' ')?.[0] }}
+                </span>
+                <span class="material-icons text-[18px] text-[#666]">expand_more</span>
               </button>
 
-              <!-- Dropdown panel -->
               @if (isDropdownOpen()) {
-                <div class="absolute right-0 top-[calc(100%+8px)] bg-white rounded-[16px] shadow-[0_8px_40px_rgba(0,0,0,0.15)] border border-[#F0F0F0] min-w-[280px] z-[100] overflow-hidden">
+                <div class="absolute right-0 top-[calc(100%+8px)] bg-white
+                            rounded-[16px] shadow-dropdown
+                            border border-[#F0F0F0] min-w-[280px]
+                            z-[100] overflow-hidden">
 
                   <!-- User info -->
                   <div class="px-5 py-4 border-b border-[#F5F5F5]">
-                    <p class="text-[16px] font-bold text-[#1A1A1A] truncate">{{ currentUser()?.fullName }}</p>
-                    <p class="text-[13px] text-[#666666] truncate mt-0.5">{{ currentUser()?.email }}</p>
+                    <p class="text-[16px] font-bold text-[#1A1A1A] truncate">
+                      {{ currentUser()?.fullName }}
+                    </p>
+                    <p class="text-[13px] text-[#666666] truncate mt-0.5">
+                      {{ currentUser()?.email }}
+                    </p>
                   </div>
 
                   <!-- Menu items -->
                   <div class="py-1">
-
                     <div (click)="navigate('/orders')"
-                      class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] cursor-pointer transition whitespace-nowrap">
+                      class="flex items-center gap-3 px-5 py-3
+                             hover:bg-[#F8F8F8] cursor-pointer transition">
                       <span class="material-icons text-[20px] text-[#666666]">shopping_bag</span>
                       <span class="text-[14px] text-[#1A1A1A] font-medium">My Orders</span>
                     </div>
 
                     <div (click)="navigate('/account/addresses')"
-                      class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] cursor-pointer transition whitespace-nowrap">
+                      class="flex items-center gap-3 px-5 py-3
+                             hover:bg-[#F8F8F8] cursor-pointer transition">
                       <span class="material-icons text-[20px] text-[#666666]">location_on</span>
                       <span class="text-[14px] text-[#1A1A1A] font-medium">Saved Addresses</span>
                     </div>
 
                     <div (click)="navigate('/account/blinkit-plus')"
-                      class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] cursor-pointer transition whitespace-nowrap">
+                      class="flex items-center gap-3 px-5 py-3
+                             hover:bg-[#F8F8F8] cursor-pointer transition">
                       <span class="material-icons text-[20px] text-[#F8C200]">star</span>
                       <span class="text-[14px] text-[#1A1A1A] font-medium">Blinkit Plus</span>
                     </div>
 
                     <div (click)="navigate('/help')"
-                      class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] cursor-pointer transition whitespace-nowrap">
+                      class="flex items-center gap-3 px-5 py-3
+                             hover:bg-[#F8F8F8] cursor-pointer transition">
                       <span class="material-icons text-[20px] text-[#666666]">help_outline</span>
                       <span class="text-[14px] text-[#1A1A1A] font-medium">FAQ's</span>
                     </div>
 
                     <div (click)="navigate('/account')"
-                      class="flex items-center gap-3 px-5 py-3 hover:bg-[#F8F8F8] cursor-pointer transition whitespace-nowrap">
+                      class="flex items-center gap-3 px-5 py-3
+                             hover:bg-[#F8F8F8] cursor-pointer transition">
                       <span class="material-icons text-[20px] text-[#666666]">lock_outline</span>
                       <span class="text-[14px] text-[#1A1A1A] font-medium">Account Privacy</span>
                     </div>
 
-                    <!-- Admin Panel — only for Admin role -->
                     @if (currentUser()?.role === 'Admin') {
                       <div class="border-t border-[#F5F5F5]">
                         <div (click)="navigate('/admin')"
-                          class="flex items-center gap-3 px-5 py-3 hover:bg-[#FFF8E1] cursor-pointer transition whitespace-nowrap">
+                          class="flex items-center gap-3 px-5 py-3
+                                 hover:bg-[#FFF8E1] cursor-pointer transition">
                           <span class="material-icons text-[20px] text-[#F57C00]">admin_panel_settings</span>
                           <span class="text-[14px] font-semibold text-[#F57C00]">Admin Panel</span>
                         </div>
                       </div>
                     }
 
-                    <!-- Logout -->
                     <div class="border-t border-[#F5F5F5]">
                       <div (click)="onLogout()"
-                        class="flex items-center gap-3 px-5 py-3 hover:bg-[#FFEBEE] cursor-pointer transition whitespace-nowrap">
+                        class="flex items-center gap-3 px-5 py-3
+                               hover:bg-[#FFEBEE] cursor-pointer transition">
                         <span class="material-icons text-[20px] text-[#F44336]">logout</span>
                         <span class="text-[14px] font-semibold text-[#F44336]">Log Out</span>
                       </div>
                     </div>
-
                   </div>
 
                   <!-- App QR section -->
-                  <div class="border-t border-[#F5F5F5] bg-[#FAFAFA] px-5 py-4 flex items-center gap-3">
-                    <div class="w-[52px] h-[52px] bg-[#1A1A1A] rounded-[8px] flex-shrink-0 flex items-center justify-center">
+                  <div class="border-t border-[#F5F5F5] bg-[#FAFAFA] px-5 py-4
+                              flex items-center gap-3">
+                    <div class="w-[52px] h-[52px] bg-[#1A1A1A] rounded-[8px]
+                                flex-shrink-0 flex items-center justify-center">
                       <span class="material-icons text-white text-[28px]">qr_code</span>
                     </div>
                     <div>
@@ -153,15 +184,19 @@ interface UserLocation { city: string; state: string; pincode: string; }
 
           <!-- Cart button -->
           <button
-            class="relative flex items-center gap-2 bg-[#0C831F] text-white rounded-[8px] h-[44px] px-4 hover:bg-[#0a6b19] transition-colors"
-            (click)="cartService.openCart()"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
-            </svg>
-            <span class="text-[14px] font-semibold hidden md:block">My Cart</span>
+            class="relative flex items-center gap-2
+                   bg-[#0C831F] text-white rounded-[10px]
+                   h-[44px] px-4 hover:bg-[#0a6b19]
+                   transition btn-press"
+            (click)="cartService.openCart()">
+            <span class="material-icons text-[20px]">shopping_cart</span>
+            <span class="text-[14px] font-semibold hidden sm:block">My Cart</span>
             @if (cartStore.itemCount() > 0) {
-              <span class="absolute -top-1 -right-1 w-5 h-5 bg-[#F8C200] text-[#1A1A1A] text-[11px] font-bold rounded-full flex items-center justify-center">
+              <span class="absolute -top-1.5 -right-1.5
+                           bg-[#F8C200] text-[#1A1A1A]
+                           text-[11px] font-black
+                           w-5 h-5 rounded-full
+                           flex items-center justify-center">
                 {{ cartStore.itemCount() }}
               </span>
             }
@@ -169,7 +204,7 @@ interface UserLocation { city: string; state: string; pincode: string; }
 
         </div>
       </div>
-    </header>
+    </nav>
   `,
 })
 export class NavbarComponent implements OnInit {
@@ -212,6 +247,11 @@ export class NavbarComponent implements OnInit {
   navigate(path: string): void {
     this.router.navigate([path]);
     this.closeDropdown();
+  }
+
+  getInitials(): string {
+    const name = this.authStore.currentUser()?.fullName ?? '';
+    return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
   }
 
   openLocationSelector(): void {

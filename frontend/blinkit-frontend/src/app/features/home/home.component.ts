@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { MatIconModule } from '@angular/material/icon';
+import { Router, RouterLink } from '@angular/router';
 import { ProductService } from '../../core/services/product.service';
 import { ICategory, IProduct } from '../../core/models';
 import { HeroBannerComponent } from './hero-banner/hero-banner.component';
@@ -21,7 +20,6 @@ interface CategorySection {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     RouterLink,
-    MatIconModule,
     HeroBannerComponent,
     CategoryStripComponent,
     OffersStripComponent,
@@ -30,37 +28,45 @@ interface CategorySection {
   ],
   template: `
     <div class="bg-[#F8F8F8] min-h-screen pb-8">
-      <app-category-strip />
+      <app-category-strip (categorySelected)="onCategorySelected($event)" />
       <app-hero-banner />
 
       <!-- Category-wise product sections -->
       <div class="max-w-[1400px] mx-auto">
         @for (section of categorySections(); track section.category.id) {
-          <div class="mb-10">
+          <section class="mb-8">
 
             <!-- Section header -->
-            <div class="flex items-center justify-between px-4 py-3">
-              <h2 class="text-[22px] font-bold text-[#1A1A1A]">{{ section.category.name }}</h2>
+            <div class="flex items-center justify-between px-4 mb-3">
+              <h2 class="text-[20px] font-bold text-[#1A1A1A]">
+                {{ section.category.name }}
+              </h2>
               <a [routerLink]="['/products']"
                  [queryParams]="{ category: section.category.id }"
-                 class="text-[14px] font-semibold text-[#0C831F] hover:underline flex items-center gap-0.5">
+                 class="flex items-center gap-0.5 text-[14px]
+                        font-semibold text-[#0C831F] hover:underline transition">
                 See all
-                <mat-icon class="text-[16px] leading-none">chevron_right</mat-icon>
+                <span class="material-icons text-[16px]">chevron_right</span>
               </a>
             </div>
 
             <!-- Skeleton loading -->
             @if (section.isLoading) {
-              <div class="flex gap-3 overflow-x-auto px-4 pb-3 scrollbar-hide">
+              <div class="flex gap-3 px-4 overflow-x-auto scrollbar-hide pb-2">
                 @for (i of skeletons; track $index) {
-                  <div class="w-[175px] h-[280px] flex-shrink-0 bg-[#F2F2F2] rounded-[16px] animate-pulse"></div>
+                  <div class="w-[175px] flex-shrink-0">
+                    <div class="skeleton h-[160px] rounded-[16px] mb-2"></div>
+                    <div class="skeleton h-3 w-3/4 mb-1"></div>
+                    <div class="skeleton h-4 w-full mb-2"></div>
+                    <div class="skeleton h-8 w-full rounded-[8px]"></div>
+                  </div>
                 }
               </div>
             }
 
             <!-- Products horizontal scroll -->
             @if (!section.isLoading && section.products.length > 0) {
-              <div class="flex gap-3 overflow-x-auto px-4 pb-3 scrollbar-hide">
+              <div class="flex gap-3 px-4 overflow-x-auto scrollbar-hide pb-2">
                 @for (product of section.products; track product.id) {
                   <div class="w-[175px] flex-shrink-0">
                     <app-product-card [product]="product" />
@@ -69,7 +75,7 @@ interface CategorySection {
               </div>
             }
 
-          </div>
+          </section>
         }
       </div>
 
@@ -80,9 +86,18 @@ interface CategorySection {
 })
 export class HomeComponent implements OnInit {
   private readonly productService = inject(ProductService);
+  private readonly router = inject(Router);
 
   readonly categorySections = signal<CategorySection[]>([]);
   readonly skeletons = Array(5);
+
+  onCategorySelected(categoryId: string | null): void {
+    if (categoryId) {
+      this.router.navigate(['/products'], { queryParams: { category: categoryId } });
+    } else {
+      this.router.navigate(['/products']);
+    }
+  }
 
   ngOnInit(): void {
     this.productService.getCategories().subscribe(categories => {

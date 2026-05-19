@@ -10,49 +10,68 @@ import { ICategory } from '../../../core/models';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="bg-white border-b border-[#E0E0E0] sticky top-[64px] z-40">
-      <div class="flex items-center overflow-x-auto scrollbar-hide max-w-[1200px] mx-auto px-4">
+    <div class="bg-white border-b border-[#F0F0F0]
+                sticky top-[64px] z-40">
+      <div class="max-w-[1400px] mx-auto px-4">
+        <div class="flex items-center overflow-x-auto
+                    scrollbar-hide gap-0 py-1">
 
-        @if (loading()) {
-          @for (_ of skeletons; track $index) {
-            <div class="flex-shrink-0 flex flex-col items-center gap-1 px-4 py-3 min-w-[80px] animate-pulse">
-              <div class="w-12 h-12 rounded-full bg-gray-200"></div>
-              <div class="h-2.5 w-14 bg-gray-200 rounded"></div>
-            </div>
-          }
-        } @else {
-          <!-- All pill -->
-          <button
-            class="flex-shrink-0 flex flex-col items-center gap-1 px-4 py-3 cursor-pointer relative min-w-[80px] transition-colors hover:bg-[#F8F8F8]"
-            (click)="select(null)"
-          >
-            <div class="w-12 h-12 rounded-full bg-[#F8F8F8] flex items-center justify-center text-xl">
-              🛒
-            </div>
-            <span class="text-[12px] font-semibold text-center leading-tight max-w-[72px]"
-              [class]="selected() === null ? 'text-[#0C831F]' : 'text-[#1A1A1A]'">All</span>
-            @if (selected() === null) {
-              <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-[#0C831F]"></div>
-            }
-          </button>
-
-          @for (cat of categories(); track cat.id) {
-            <button
-              class="flex-shrink-0 flex flex-col items-center gap-1 px-4 py-3 cursor-pointer relative min-w-[80px] transition-colors hover:bg-[#F8F8F8]"
-              (click)="select(cat.id)"
-            >
-              <div class="w-12 h-12 rounded-full bg-[#F8F8F8] flex items-center justify-center overflow-hidden">
-                <img [src]="categoryImages()[cat.id] || cat.iconUrl" [alt]="cat.name"
-                  class="w-8 h-8 object-contain" loading="lazy" />
+          @if (loading()) {
+            @for (_ of skeletons; track $index) {
+              <div class="flex-shrink-0 flex flex-col items-center gap-1
+                          px-4 py-3 min-w-[80px] animate-pulse">
+                <div class="w-12 h-12 rounded-full bg-gray-200"></div>
+                <div class="h-2.5 w-14 bg-gray-200 rounded mt-1"></div>
               </div>
-              <span class="text-[12px] font-semibold text-center leading-tight max-w-[72px] line-clamp-2"
-                [class]="selected() === cat.id ? 'text-[#0C831F]' : 'text-[#1A1A1A]'">{{ cat.name }}</span>
-              @if (selected() === cat.id) {
-                <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-[#0C831F]"></div>
-              }
+            }
+          } @else {
+
+            <!-- All pill -->
+            <button
+              [class]="'flex flex-col items-center gap-1 px-4 py-3
+                        cursor-pointer transition flex-shrink-0 border-b-2 ' +
+                        (selected() === null
+                          ? 'border-[#0C831F]'
+                          : 'border-transparent hover:bg-[#F8F8F8]')"
+              (click)="select(null)">
+              <div class="w-12 h-12 rounded-full bg-[#F8F8F8]
+                          flex items-center justify-center">
+                <span class="material-icons text-[22px] text-[#666]">grid_view</span>
+              </div>
+              <span [class]="'text-[11px] font-semibold text-center ' +
+                             (selected() === null ? 'text-[#0C831F]' : 'text-[#1A1A1A]')">
+                All
+              </span>
             </button>
+
+            @for (cat of categories(); track cat.id) {
+              <button
+                [class]="'flex flex-col items-center gap-1 px-3 py-3
+                          cursor-pointer transition flex-shrink-0
+                          min-w-[72px] border-b-2 ' +
+                          (selected() === cat.id
+                            ? 'border-[#0C831F]'
+                            : 'border-transparent hover:bg-[#F8F8F8]')"
+                (click)="select(cat.id)">
+
+                <div class="w-12 h-12 rounded-full overflow-hidden
+                            border-2 border-[#F0F0F0] flex-shrink-0 bg-[#F8F8F8]">
+                  <img [src]="categoryImages()[cat.id] || cat.iconUrl"
+                       [alt]="cat.name"
+                       loading="lazy"
+                       class="w-full h-full object-cover">
+                </div>
+
+                <span [class]="'text-[11px] font-semibold text-center
+                                leading-tight max-w-[72px] ' +
+                                (selected() === cat.id ? 'text-[#0C831F]' : 'text-[#1A1A1A]')">
+                  {{ cat.name }}
+                </span>
+              </button>
+            }
+
           }
-        }
+        </div>
       </div>
     </div>
   `,
