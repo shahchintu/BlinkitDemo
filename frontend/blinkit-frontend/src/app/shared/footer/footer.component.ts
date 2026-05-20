@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-footer',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterModule],
   template: `
     <footer class="bg-[#1A1A1A] text-white mt-16">
       <div class="max-w-screen-xl mx-auto px-4 py-10">
@@ -13,10 +13,10 @@ import { RouterLink } from '@angular/router';
           <div>
             <h3 class="font-semibold mb-3 text-[#F8C200]">Company</h3>
             <ul class="space-y-2 text-sm text-gray-400">
-              <li><a href="#" class="hover:text-white transition-colors">About Us</a></li>
-              <li><a href="#" class="hover:text-white transition-colors">Careers</a></li>
-              <li><a href="#" class="hover:text-white transition-colors">Press</a></li>
-              <li><a href="#" class="hover:text-white transition-colors">Blog</a></li>
+              <li><a routerLink="/pages/about" class="hover:text-white transition-colors">About Us</a></li>
+              <li><a routerLink="/pages/careers" class="hover:text-white transition-colors">Careers</a></li>
+              <li><a routerLink="/pages/press" class="hover:text-white transition-colors">Press</a></li>
+              <li><a routerLink="/pages/blog" class="hover:text-white transition-colors">Blog</a></li>
             </ul>
           </div>
           <div>
@@ -32,9 +32,9 @@ import { RouterLink } from '@angular/router';
             <h3 class="font-semibold mb-3 text-[#F8C200]">Help</h3>
             <ul class="space-y-2 text-sm text-gray-400">
               <li><a routerLink="/help" class="hover:text-white transition-colors">FAQ</a></li>
-              <li><a routerLink="/help" class="hover:text-white transition-colors">Contact Us</a></li>
-              <li><a href="#" class="hover:text-white transition-colors">Privacy Policy</a></li>
-              <li><a href="#" class="hover:text-white transition-colors">Terms of Service</a></li>
+              <li><a routerLink="/pages/contact" class="hover:text-white transition-colors">Contact Us</a></li>
+              <li><a routerLink="/pages/privacy" class="hover:text-white transition-colors">Privacy Policy</a></li>
+              <li><a routerLink="/pages/terms" class="hover:text-white transition-colors">Terms & Conditions</a></li>
             </ul>
           </div>
           <div>

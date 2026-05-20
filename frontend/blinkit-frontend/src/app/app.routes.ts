@@ -103,7 +103,14 @@ export const routes: Routes = [
       import('./features/admin/admin.routes').then(m => m.ADMIN_ROUTES),
   },
   {
+    path: 'pages/:slug',
+    loadComponent: () => import(
+      './features/pages/dynamic-page/dynamic-page.component'
+    ).then(m => m.DynamicPageComponent)
+  },
+  {
     path: '**',
     redirectTo: '',
   },
 ];
+
