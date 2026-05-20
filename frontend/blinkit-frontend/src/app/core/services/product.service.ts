@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { map, Observable } from 'rxjs';
+import { catchError, map, Observable, of } from 'rxjs';
 import { ICategory, IProduct, IProductVariant, IPaginatedResult } from '../models';
 
 interface ProductVariantDto {
@@ -88,6 +88,33 @@ export class ProductService {
     return this.http
       .get<ProductDto[]>(`/api/products/${productId}/related`, { params: { limit } })
       .pipe(map(items => items.map(this.mapProduct)));
+  }
+
+  getSimilarProducts(productId: string, limit = 10): Observable<IProduct[]> {
+    return this.http
+      .get<ProductDto[]>(`/api/products/${productId}/similar`, { params: { limit } })
+      .pipe(
+        map(products => products.map(p => this.mapProduct(p))),
+        catchError(() => of([])),
+      );
+  }
+
+  getTopInCategory(productId: string, limit = 10): Observable<IProduct[]> {
+    return this.http
+      .get<ProductDto[]>(`/api/products/${productId}/top-in-category`, { params: { limit } })
+      .pipe(
+        map(products => products.map(p => this.mapProduct(p))),
+        catchError(() => of([])),
+      );
+  }
+
+  getAlsoBought(productId: string, limit = 10): Observable<IProduct[]> {
+    return this.http
+      .get<ProductDto[]>(`/api/products/${productId}/also-bought`, { params: { limit } })
+      .pipe(
+        map(products => products.map(p => this.mapProduct(p))),
+        catchError(() => of([])),
+      );
   }
 
   private mapProduct(p: ProductDto): IProduct {

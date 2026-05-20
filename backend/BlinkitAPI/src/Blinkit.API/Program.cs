@@ -63,6 +63,11 @@ builder.Services.AddScoped<IBlinkitDbContext>(sp => sp.GetRequiredService<Blinki
 
 builder.Services.AddHttpClient("Unsplash");
 builder.Services.AddHttpClient("Pexels");
+builder.Services.AddHttpClient("Nominatim", client =>
+{
+    client.BaseAddress = new Uri("https://nominatim.openstreetmap.org/");
+    client.DefaultRequestHeaders.Add("User-Agent", "BlinkitCloneApp/1.0");
+});
 
 builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
     ConnectionMultiplexer.Connect(

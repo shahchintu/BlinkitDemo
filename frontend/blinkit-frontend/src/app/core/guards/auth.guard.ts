@@ -1,11 +1,22 @@
 import { inject } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { CanActivateFn, Router } from '@angular/router';
+import { filter, map, take } from 'rxjs';
 import { AuthStore } from '../stores/auth.store';
 
 export const authGuard: CanActivateFn = () => {
   const authStore = inject(AuthStore);
   const router = inject(Router);
 
-  if (authStore.isAuthenticated()) return true;
-  return router.createUrlTree(['/auth/login']);
+  // APP_INITIALIZER guarantees isInitialized() is already true in most cases;
+  // the Observable path handles the rare edge case where routing outraces init.
+  if (authStore.isInitialized()) {
+    return authStore.isAuthenticated() ? true : router.createUrlTree(['/auth/login']);
+  }
+
+  return toObservable(authStore.isInitialized).pipe(
+    filter(Boolean),
+    take(1),
+    map(() => authStore.isAuthenticated() ? true : router.createUrlTree(['/auth/login']))
+  );
 };

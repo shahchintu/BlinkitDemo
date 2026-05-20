@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy, Component, inject, OnInit, signal,
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { ProductService } from '../../../core/services/product.service';
 import { ImageService } from '../../../core/services/image.service';
 import { CartStore } from '../../../core/stores/cart.store';
@@ -226,6 +227,144 @@ import { ScrollableRowComponent } from '../../../shared/components/scrollable-ro
             </div>
           }
 
+          <!-- Similar Products -->
+          <section class="mt-8 border-t border-[#F5F5F5] pt-6">
+            <div class="flex items-center justify-between px-4 mb-4">
+              <div>
+                <h3 class="text-[18px] font-bold text-[#1A1A1A]">Similar Products</h3>
+                <p class="text-[12px] text-[#999] mt-0.5">More like {{ product()?.name }}</p>
+              </div>
+              <a [routerLink]="['/products']"
+                 [queryParams]="{ categoryId: product()?.categoryId }"
+                 class="text-[13px] font-semibold text-[#0C831F] hover:underline flex items-center gap-0.5">
+                See all
+                <span class="material-icons text-[16px]">chevron_right</span>
+              </a>
+            </div>
+
+            @if (isSimilarLoading()) {
+              <app-scrollable-row>
+                @for (i of [1,2,3,4,5]; track i) {
+                  <div class="w-[160px] flex-shrink-0">
+                    <div class="skeleton h-[140px] rounded-[14px] mb-2"></div>
+                    <div class="skeleton h-3 w-3/4 mb-1 rounded"></div>
+                    <div class="skeleton h-4 w-full mb-2 rounded"></div>
+                    <div class="skeleton h-8 w-full rounded-[8px]"></div>
+                  </div>
+                }
+              </app-scrollable-row>
+            }
+
+            @if (!isSimilarLoading() && similarProducts().length > 0) {
+              <app-scrollable-row [scrollAmount]="500">
+                @for (p of similarProducts(); track p.id) {
+                  <div class="w-[160px] flex-shrink-0">
+                    <app-product-card [product]="p" />
+                  </div>
+                }
+              </app-scrollable-row>
+            }
+          </section>
+
+          <!-- Top in Category -->
+          <section class="mt-6 border-t border-[#F5F5F5] pt-6">
+            <div class="flex items-center justify-between px-4 mb-4">
+              <div>
+                <div class="flex items-center gap-2 mb-0.5">
+                  <span class="text-[20px]">🏆</span>
+                  <h3 class="text-[18px] font-bold text-[#1A1A1A]">Top in {{ product()?.categoryName }}</h3>
+                </div>
+                <p class="text-[12px] text-[#999] ml-7">Best selling in this category</p>
+              </div>
+              <a [routerLink]="['/products']"
+                 [queryParams]="{ categoryId: product()?.categoryId, sortBy: 'discount' }"
+                 class="text-[13px] font-semibold text-[#0C831F] hover:underline flex items-center gap-0.5">
+                See all
+                <span class="material-icons text-[16px]">chevron_right</span>
+              </a>
+            </div>
+
+            @if (isTopLoading()) {
+              <app-scrollable-row>
+                @for (i of [1,2,3,4,5]; track i) {
+                  <div class="w-[160px] flex-shrink-0">
+                    <div class="skeleton h-[140px] rounded-[14px] mb-2"></div>
+                    <div class="skeleton h-3 w-3/4 mb-1 rounded"></div>
+                    <div class="skeleton h-4 w-full mb-2 rounded"></div>
+                    <div class="skeleton h-8 w-full rounded-[8px]"></div>
+                  </div>
+                }
+              </app-scrollable-row>
+            }
+
+            @if (!isTopLoading() && topInCategory().length > 0) {
+              <app-scrollable-row [scrollAmount]="500">
+                @for (p of topInCategory(); track p.id; let idx = $index) {
+                  <div class="w-[160px] flex-shrink-0 relative">
+                    @if (idx < 3) {
+                      <div class="absolute top-2 left-2 z-10 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black"
+                           [class]="idx === 0 ? 'bg-[#F8C200] text-[#1A1A1A]' : idx === 1 ? 'bg-[#C0C0C0] text-white' : 'bg-[#CD7F32] text-white'">
+                        {{ idx + 1 }}
+                      </div>
+                    }
+                    <app-product-card [product]="p" />
+                  </div>
+                }
+              </app-scrollable-row>
+            }
+          </section>
+
+          <!-- People Also Bought -->
+          <section class="mt-6 border-t border-[#F5F5F5] pt-6 mb-8">
+            <div class="flex items-center justify-between px-4 mb-4">
+              <div>
+                <div class="flex items-center gap-2 mb-0.5">
+                  <span class="text-[20px]">🛒</span>
+                  <h3 class="text-[18px] font-bold text-[#1A1A1A]">People Also Bought</h3>
+                </div>
+                <p class="text-[12px] text-[#999] ml-7">Customers who bought this also bought</p>
+              </div>
+              <a routerLink="/products"
+                 class="text-[13px] font-semibold text-[#0C831F] hover:underline flex items-center gap-0.5">
+                Explore
+                <span class="material-icons text-[16px]">chevron_right</span>
+              </a>
+            </div>
+
+            @if (isAlsoLoading()) {
+              <app-scrollable-row>
+                @for (i of [1,2,3,4,5]; track i) {
+                  <div class="w-[160px] flex-shrink-0">
+                    <div class="skeleton h-[140px] rounded-[14px] mb-2"></div>
+                    <div class="skeleton h-3 w-3/4 mb-1 rounded"></div>
+                    <div class="skeleton h-4 w-full mb-2 rounded"></div>
+                    <div class="skeleton h-8 w-full rounded-[8px]"></div>
+                  </div>
+                }
+              </app-scrollable-row>
+            }
+
+            @if (!isAlsoLoading() && alsoBought().length > 0) {
+              <app-scrollable-row [scrollAmount]="500">
+                @for (p of alsoBought(); track p.id) {
+                  <div class="w-[160px] flex-shrink-0">
+                    <app-product-card [product]="p" />
+                  </div>
+                }
+              </app-scrollable-row>
+            }
+
+            @if (!isAlsoLoading() && alsoBought().length === 0 && similarProducts().length > 0) {
+              <app-scrollable-row [scrollAmount]="500">
+                @for (p of similarProducts().slice(0, 8); track p.id) {
+                  <div class="w-[160px] flex-shrink-0">
+                    <app-product-card [product]="p" />
+                  </div>
+                }
+              </app-scrollable-row>
+            }
+          </section>
+
         </div>
       }
     </div>
@@ -243,10 +382,16 @@ export class ProductDetailComponent implements OnInit {
   readonly selectedImage = signal('');
   readonly galleryImages = signal<string[]>([]);
   readonly relatedProducts = signal<IProduct[]>([]);
+  readonly similarProducts = signal<IProduct[]>([]);
+  readonly topInCategory = signal<IProduct[]>([]);
+  readonly alsoBought = signal<IProduct[]>([]);
   readonly loading = signal(true);
   readonly error = signal(false);
   readonly addedFlash = signal(false);
   readonly showAllAttrs = signal(false);
+  readonly isSimilarLoading = signal(true);
+  readonly isTopLoading = signal(true);
+  readonly isAlsoLoading = signal(true);
 
   readonly fmt = formatPrice;
 
@@ -305,6 +450,26 @@ export class ProductDetailComponent implements OnInit {
     this.productService.getRelatedProducts(id, 12).subscribe({
       next: items => this.relatedProducts.set(items),
       error: () => {},
+    });
+
+    forkJoin({
+      similar: this.productService.getSimilarProducts(id, 10),
+      top: this.productService.getTopInCategory(id, 10),
+      also: this.productService.getAlsoBought(id, 10),
+    }).subscribe({
+      next: ({ similar, top, also }) => {
+        this.similarProducts.set(similar);
+        this.topInCategory.set(top);
+        this.alsoBought.set(also);
+        this.isSimilarLoading.set(false);
+        this.isTopLoading.set(false);
+        this.isAlsoLoading.set(false);
+      },
+      error: () => {
+        this.isSimilarLoading.set(false);
+        this.isTopLoading.set(false);
+        this.isAlsoLoading.set(false);
+      },
     });
   }
 

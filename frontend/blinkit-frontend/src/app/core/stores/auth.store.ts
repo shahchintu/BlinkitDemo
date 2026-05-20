@@ -14,6 +14,7 @@ interface AuthState {
   accessToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isInitialized: boolean;
 }
 
 export const AuthStore = signalStore(
@@ -23,6 +24,7 @@ export const AuthStore = signalStore(
     accessToken: null,
     isAuthenticated: false,
     isLoading: false,
+    isInitialized: false,
   }),
   withMethods(store => ({
     setAuth(user: IUser, token: string): void {
@@ -33,6 +35,9 @@ export const AuthStore = signalStore(
     },
     setLoading(isLoading: boolean): void {
       patchState(store, { isLoading });
+    },
+    markInitialized(): void {
+      patchState(store, { isInitialized: true });
     },
   }))
 );

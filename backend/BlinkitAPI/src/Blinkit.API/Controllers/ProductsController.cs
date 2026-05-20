@@ -41,4 +41,25 @@ public class ProductsController(IMediator mediator) : ControllerBase
         var result = await mediator.Send(new GetRelatedProductsQuery(id, limit), ct);
         return Ok(result);
     }
+
+    [HttpGet("{id:guid}/similar")]
+    public async Task<IActionResult> GetSimilar(Guid id, [FromQuery] int limit = 10, CancellationToken ct = default)
+    {
+        var result = await mediator.Send(new GetSimilarProductsQuery(id, limit), ct);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:guid}/top-in-category")]
+    public async Task<IActionResult> GetTopInCategory(Guid id, [FromQuery] int limit = 10, CancellationToken ct = default)
+    {
+        var result = await mediator.Send(new GetTopInCategoryQuery(id, limit), ct);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:guid}/also-bought")]
+    public async Task<IActionResult> GetAlsoBought(Guid id, [FromQuery] int limit = 10, CancellationToken ct = default)
+    {
+        var result = await mediator.Send(new GetAlsoBoughtQuery(id, limit), ct);
+        return Ok(result);
+    }
 }

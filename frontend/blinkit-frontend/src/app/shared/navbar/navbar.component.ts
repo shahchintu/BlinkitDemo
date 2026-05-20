@@ -1,15 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal, HostListener, ElementRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, HostListener, ElementRef } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { AuthStore } from '../../core/stores/auth.store';
 import { AuthService } from '../../core/services/auth.service';
 import { CartStore } from '../../core/stores/cart.store';
 import { CartService } from '../../core/services/cart.service';
-import { LocationSelectorComponent } from '../location-selector/location-selector.component';
+import { LocationService } from '../../core/services/location.service';
 import { LoginPromptDialogComponent } from '../login-prompt-dialog/login-prompt-dialog.component';
 import { SearchBarComponent } from '../search-bar/search-bar.component';
-
-interface UserLocation { city: string; state: string; pincode: string; }
 
 @Component({
   selector: 'app-navbar',
@@ -36,16 +34,15 @@ interface UserLocation { city: string; state: string; pincode: string; }
         </a>
 
         <!-- Location -->
-        <div class="flex-shrink-0 cursor-pointer
-                    hover:opacity-80 transition"
-             (click)="openLocationSelector()">
+        <div class="flex-shrink-0 cursor-pointer hover:opacity-80 transition"
+             (click)="openLocationDialog()">
           <p class="text-[11px] font-bold text-[#1A1A1A] leading-tight">
             Delivery in 8 minutes
           </p>
-          <div class="flex items-center gap-0.5 mt-0.5">
-            <span class="text-[13px] font-semibold text-[#1A1A1A]
-                         max-w-[140px] truncate">
-              {{ locationLabel() }}
+          <div class="flex items-center gap-1 mt-0.5">
+            <span class="material-icons text-[14px] text-[#0C831F]">location_on</span>
+            <span class="text-[13px] font-semibold text-[#1A1A1A] max-w-[160px] truncate">
+              {{ locationService.displayLocation() }}
             </span>
             <span class="material-icons text-[16px] text-[#666]">expand_more</span>
           </div>
@@ -207,26 +204,18 @@ interface UserLocation { city: string; state: string; pincode: string; }
     </nav>
   `,
 })
-export class NavbarComponent implements OnInit {
+export class NavbarComponent {
   readonly authStore = inject(AuthStore);
   readonly cartStore = inject(CartStore);
   readonly cartService = inject(CartService);
+  readonly locationService = inject(LocationService);
   private readonly dialog = inject(MatDialog);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly elementRef = inject(ElementRef);
 
   readonly isDropdownOpen = signal(false);
-  readonly locationLabel = signal('Select Location');
   readonly currentUser = this.authStore.currentUser;
-
-  ngOnInit(): void {
-    const stored = localStorage.getItem('userLocation');
-    if (stored) {
-      const loc: UserLocation = JSON.parse(stored);
-      this.locationLabel.set(loc.city || 'Select Location');
-    }
-  }
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
@@ -254,11 +243,8 @@ export class NavbarComponent implements OnInit {
     return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
   }
 
-  openLocationSelector(): void {
-    const ref = this.dialog.open(LocationSelectorComponent, { panelClass: 'rounded-2xl' });
-    ref.afterClosed().subscribe((loc: UserLocation | undefined) => {
-      if (loc?.city) this.locationLabel.set(loc.city);
-    });
+  openLocationDialog(): void {
+    this.locationService.clearLocation();
   }
 
   onLogin(): void {
