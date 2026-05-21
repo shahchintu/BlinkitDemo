@@ -5,6 +5,7 @@ using Blinkit.Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
+
 namespace Blinkit.Application.Orders.Commands;
 
 public record CreateOrderCommand(
@@ -57,10 +58,28 @@ public class CreateOrderCommandHandler(
 
         var discountedSubTotal = subTotal - couponDiscount;
         var deliveryFee = (discountedSubTotal >= 199 || request.HasBlinkitPlus) ? 0m : 29m;
-        var totalAmount = discountedSubTotal + deliveryFee;
+        const decimal handlingCharge = 2m;
+        var totalAmount = discountedSubTotal + deliveryFee + handlingCharge;
 
         var receipt = "BLK-" + Guid.NewGuid().ToString()[..6].ToUpper();
         var razorpayOrder = await razorpayService.CreateOrderAsync(totalAmount, receipt);
+
+        var address = await db.Addresses
+            .FirstOrDefaultAsync(a => a.Id == request.AddressId, cancellationToken);
+
+        var darkStores = await db.DarkStores
+            .Where(s => s.IsActive)
+            .ToListAsync(cancellationToken);
+
+        DarkStore? nearestStore = null;
+        if (darkStores.Count > 0)
+        {
+            var userLat = address?.Lat ?? 23.0225m;
+            var userLng = address?.Lng ?? 72.5714m;
+            nearestStore = darkStores
+                .OrderBy(s => Haversine(userLat, userLng, s.Lat, s.Lng))
+                .First();
+        }
 
         var order = new Order
         {
@@ -76,6 +95,12 @@ public class CreateOrderCommandHandler(
             PaymentStatus = PaymentStatus.Pending,
             RazorpayOrderId = razorpayOrder.RazorpayOrderId,
             CreatedAt = DateTime.UtcNow,
+            DarkStoreId = nearestStore?.Id,
+            DeliveryPartnerName = PickPartnerName(),
+            DeliveryPartnerPhone = PickPartnerPhone(),
+            DeliveryPartnerLat = nearestStore?.Lat,
+            DeliveryPartnerLng = nearestStore?.Lng,
+            EstimatedDeliveryMinutes = 8,
             Items = cart.Items.Select(i => new OrderItem
             {
                 Id = Guid.NewGuid(),
@@ -91,4 +116,26 @@ public class CreateOrderCommandHandler(
 
         return new CreateOrderResult(order.Id, razorpayOrder.RazorpayOrderId, totalAmount);
     }
+
+    private static double Haversine(decimal lat1, decimal lng1, decimal lat2, decimal lng2)
+    {
+        var dLat = (double)(lat2 - lat1) * Math.PI / 180;
+        var dLng = (double)(lng2 - lng1) * Math.PI / 180;
+        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2)
+              + Math.Cos((double)lat1 * Math.PI / 180)
+              * Math.Cos((double)lat2 * Math.PI / 180)
+              * Math.Sin(dLng / 2) * Math.Sin(dLng / 2);
+        return 6371 * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+    }
+
+    private static string PickPartnerName()
+    {
+        string[] names = ["Rahul Kumar", "Arjun Singh", "Priya Sharma",
+                          "Amit Patel", "Suresh Verma", "Deepak Yadav",
+                          "Ravi Gupta", "Sanjay Mehta"];
+        return names[Random.Shared.Next(names.Length)];
+    }
+
+    private static string PickPartnerPhone() =>
+        "98" + Random.Shared.Next(10_000_000, 99_999_999).ToString();
 }

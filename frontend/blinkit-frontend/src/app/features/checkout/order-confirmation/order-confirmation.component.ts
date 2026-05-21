@@ -6,7 +6,6 @@ import {
   signal,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { AuthStore } from '../../../core/stores/auth.store';
 import { CartService } from '../../../core/services/cart.service';
 import { formatPrice } from '../../../shared/utils';
 
@@ -104,7 +103,7 @@ import { formatPrice } from '../../../shared/utils';
         <!-- Action buttons -->
         <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-center w-full max-w-sm">
           <a
-            routerLink="/orders"
+            [routerLink]="['/orders', orderId(), 'track']"
             class="flex-1 bg-[#0C831F] text-white px-8 py-3 rounded-[12px] font-bold hover:bg-[#0a6b19] transition-colors text-center"
           >Track Order</a>
           <a
@@ -119,7 +118,6 @@ import { formatPrice } from '../../../shared/utils';
 })
 export class OrderConfirmationComponent implements OnInit {
   private readonly router = inject(Router);
-  private readonly authStore = inject(AuthStore);
   private readonly cartService = inject(CartService);
 
   readonly fmt = formatPrice;

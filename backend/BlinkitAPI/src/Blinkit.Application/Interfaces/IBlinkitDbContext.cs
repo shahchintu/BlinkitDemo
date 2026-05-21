@@ -21,5 +21,6 @@ public interface IBlinkitDbContext
     DbSet<Address> Addresses { get; }
     DbSet<OrderEntity> Orders { get; }
     DbSet<OrderItem> OrderItems { get; }
+    DbSet<DarkStore> DarkStores { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

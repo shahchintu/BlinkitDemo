@@ -4,6 +4,7 @@ using Blinkit.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Blinkit.Infrastructure.Migrations
 {
     [DbContext(typeof(BlinkitDbContext))]
-    partial class BlinkitDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260521110332_AddDarkStoresAndOrderTracking")]
+    partial class AddDarkStoresAndOrderTracking
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -348,43 +351,6 @@ namespace Blinkit.Infrastructure.Migrations
                     b.ToTable("DeliverySlots");
                 });
 
-            modelBuilder.Entity("Blinkit.Domain.Entities.DarkStore", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Address")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-
-                    b.Property<string>("City")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<decimal>("Lat")
-                        .HasPrecision(10, 7)
-                        .HasColumnType("decimal(10,7)");
-
-                    b.Property<decimal>("Lng")
-                        .HasPrecision(10, 7)
-                        .HasColumnType("decimal(10,7)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("DarkStores");
-                });
-
             modelBuilder.Entity("Blinkit.Domain.Entities.Order", b =>
                 {
                     b.Property<Guid>("Id")
@@ -405,31 +371,9 @@ namespace Blinkit.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("DarkStoreId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<decimal>("DeliveryFee")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("DeliveryPartnerLat")
-                        .HasPrecision(10, 7)
-                        .HasColumnType("decimal(10,7)");
-
-                    b.Property<decimal?>("DeliveryPartnerLng")
-                        .HasPrecision(10, 7)
-                        .HasColumnType("decimal(10,7)");
-
-                    b.Property<string>("DeliveryPartnerName")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("DeliveryPartnerPhone")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<int?>("EstimatedDeliveryMinutes")
-                        .HasColumnType("int");
 
                     b.Property<int>("PaymentStatus")
                         .HasColumnType("int");
@@ -459,8 +403,6 @@ namespace Blinkit.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AddressId");
-
-                    b.HasIndex("DarkStoreId");
 
                     b.ToTable("Orders");
                 });
@@ -826,14 +768,7 @@ namespace Blinkit.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Blinkit.Domain.Entities.DarkStore", "DarkStore")
-                        .WithMany()
-                        .HasForeignKey("DarkStoreId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.Navigation("Address");
-
-                    b.Navigation("DarkStore");
                 });
 
             modelBuilder.Entity("Blinkit.Domain.Entities.OrderItem", b =>

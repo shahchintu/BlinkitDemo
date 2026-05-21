@@ -233,6 +233,13 @@ type PaymentMethod = 'upi' | 'card' | 'netbanking' | 'cod' | 'paylater';
                     <span>{{ fmt(29) }}</span>
                   }
                 </div>
+                <div class="flex justify-between text-gray-600">
+                  <span class="flex items-center gap-1">
+                    Handling charge
+                    <span class="text-[10px] text-blinkit-muted">(safe delivery)</span>
+                  </span>
+                  <span>{{ fmt(HANDLING_CHARGE) }}</span>
+                </div>
                 <div class="flex justify-between font-bold text-gray-800 pt-2 border-t border-blinkit-border">
                   <span>Total</span>
                   <span>{{ fmt(orderTotal(cartStore.total())) }}</span>
@@ -375,8 +382,11 @@ export class CheckoutComponent implements OnInit {
     return ['Address', 'Delivery', 'Payment'][step - 1];
   }
 
+  readonly HANDLING_CHARGE = 2;
+
   orderTotal(subTotal: number): number {
-    return subTotal >= 199 ? subTotal : subTotal + 29;
+    const delivery = subTotal >= 199 ? 0 : 29;
+    return subTotal + delivery + this.HANDLING_CHARGE;
   }
 
   private loadAddresses(): void {
@@ -432,7 +442,6 @@ export class CheckoutComponent implements OnInit {
   }
 
   pay(): void {
-    const subTotal = this.cartStore.total();
     const addressId = this.selectedAddressId();
     const slotId = this.selectedSlotId();
     if (!addressId) return;
@@ -468,7 +477,7 @@ export class CheckoutComponent implements OnInit {
                   state: {
                     orderId: result.orderId,
                     paymentId: rzpResponse.razorpay_payment_id,
-                    orderTotal: this.cartStore.total()
+                    orderTotal: this.orderTotal(this.cartStore.total())
                   },
                 });
               },

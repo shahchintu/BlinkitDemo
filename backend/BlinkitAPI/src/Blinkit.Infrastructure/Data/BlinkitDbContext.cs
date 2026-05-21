@@ -23,6 +23,7 @@ public class BlinkitDbContext(DbContextOptions<BlinkitDbContext> options)
     public DbSet<Address> Addresses => Set<Address>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<DarkStore> DarkStores => Set<DarkStore>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -167,6 +168,17 @@ public class BlinkitDbContext(DbContextOptions<BlinkitDbContext> options)
             e.Property(x => x.Lng).HasPrecision(10, 7);
         });
 
+        builder.Entity<DarkStore>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Name).IsRequired().HasMaxLength(200);
+            e.Property(x => x.Address).IsRequired().HasMaxLength(300);
+            e.Property(x => x.City).IsRequired().HasMaxLength(100);
+            e.Property(x => x.Lat).HasPrecision(10, 7);
+            e.Property(x => x.Lng).HasPrecision(10, 7);
+
+        });
+
         builder.Entity<Order>(e =>
         {
             e.HasKey(x => x.Id);
@@ -178,11 +190,20 @@ public class BlinkitDbContext(DbContextOptions<BlinkitDbContext> options)
             e.Property(x => x.TotalAmount).HasPrecision(18, 2);
             e.Property(x => x.RazorpayOrderId).HasMaxLength(100);
             e.Property(x => x.RazorpayPaymentId).HasMaxLength(100);
+            e.Property(x => x.DeliveryPartnerName).HasMaxLength(100);
+            e.Property(x => x.DeliveryPartnerPhone).HasMaxLength(20);
+            e.Property(x => x.DeliveryPartnerLat).HasPrecision(10, 7);
+            e.Property(x => x.DeliveryPartnerLng).HasPrecision(10, 7);
 
             e.HasOne(x => x.Address)
              .WithMany()
              .HasForeignKey(x => x.AddressId)
              .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasOne(x => x.DarkStore)
+             .WithMany()
+             .HasForeignKey(x => x.DarkStoreId)
+             .OnDelete(DeleteBehavior.SetNull);
 
             e.HasMany(x => x.Items)
              .WithOne(x => x.Order)

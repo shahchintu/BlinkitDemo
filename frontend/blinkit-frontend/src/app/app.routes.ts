@@ -47,6 +47,12 @@ export const routes: Routes = [
       import('./features/orders/order-history/order-history.component').then(m => m.OrderHistoryComponent),
   },
   {
+    path: 'orders/:id/track',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/orders/order-tracking/order-tracking.component').then(m => m.OrderTrackingComponent),
+  },
+  {
     path: 'orders/:id/add',
     canActivate: [authGuard],
     loadComponent: () =>
