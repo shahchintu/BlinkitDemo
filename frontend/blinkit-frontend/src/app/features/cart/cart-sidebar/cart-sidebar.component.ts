@@ -38,9 +38,13 @@ import { ProductCardComponent } from '../../products/product-card/product-card.c
                   shadow-sidebar w-full sm:w-[400px]">
 
         <!-- Header -->
-        <div class="flex items-center justify-between
-                    px-5 py-4 border-b border-[#F5F5F5]">
-          <div class="flex items-center gap-2">
+        <div class="flex items-center gap-3 px-4 py-4 border-b border-[#F5F5F5]">
+          <button (click)="cartService.closeCart()"
+            class="w-8 h-8 rounded-full hover:bg-[#F8F8F8]
+                   flex items-center justify-center transition flex-shrink-0">
+            <span class="material-icons text-[22px] text-[#1A1A1A]">arrow_back</span>
+          </button>
+          <div class="flex items-center gap-2 flex-1">
             <span class="text-[18px] font-bold text-[#1A1A1A]">My Cart</span>
             @if (cartStore.itemCount() > 0) {
               <span class="bg-[#0C831F] text-white text-[12px]
@@ -49,11 +53,14 @@ import { ProductCardComponent } from '../../products/product-card/product-card.c
               </span>
             }
           </div>
-          <button (click)="cartService.closeCart()"
-            class="w-8 h-8 rounded-full hover:bg-[#F8F8F8]
-                   flex items-center justify-center transition">
-            <span class="material-icons text-[20px] text-[#666]">close</span>
-          </button>
+          @if (cartStore.itemCount() > 0) {
+            <button (click)="shareCart()"
+              class="flex items-center gap-1 text-[#0C831F] text-[13px]
+                     font-semibold hover:opacity-75 transition flex-shrink-0">
+              <span class="material-icons text-[18px]">share</span>
+              Share
+            </button>
+          }
         </div>
 
         <!-- Scrollable body -->
@@ -76,6 +83,20 @@ import { ProductCardComponent } from '../../products/product-card/product-card.c
               </button>
             </div>
           } @else {
+
+            <!-- Total savings banner (top) -->
+            @if (totalSavings() > 0) {
+              <div class="mx-4 mt-3 bg-[#EBF5FB] rounded-[10px]
+                          px-4 py-2.5 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="material-icons text-[#1565C0] text-[18px]">savings</span>
+                  <span class="text-[13px] font-semibold text-[#1565C0]">Your total savings</span>
+                </div>
+                <span class="text-[13px] font-bold text-[#1565C0]">
+                  ₹{{ totalSavings().toFixed(0) }}
+                </span>
+              </div>
+            }
 
             <!-- Free delivery progress -->
             @if (cartStore.total() < 199) {
@@ -123,9 +144,16 @@ import { ProductCardComponent } from '../../products/product-card/product-card.c
                       {{ item.product.name }}
                     </p>
                     <p class="text-[11px] text-[#666] mt-0.5">{{ item.variant.unit }}</p>
-                    <p class="text-[13px] font-bold text-[#1A1A1A] mt-1">
-                      ₹{{ (item.unitPrice * item.quantity).toFixed(0) }}
-                    </p>
+                    <div class="flex items-center gap-1.5 mt-1">
+                      <p class="text-[13px] font-bold text-[#1A1A1A]">
+                        ₹{{ (item.unitPrice * item.quantity).toFixed(0) }}
+                      </p>
+                      @if (item.unitPrice < item.variant.price) {
+                        <p class="text-[11px] text-[#999] line-through">
+                          ₹{{ (item.variant.price * item.quantity).toFixed(0) }}
+                        </p>
+                      }
+                    </div>
                     <button (click)="saveForLater(item)"
                       class="text-[11px] text-[#666] hover:text-[#F44336] transition mt-1">
                       Save for later
@@ -214,41 +242,101 @@ import { ProductCardComponent } from '../../products/product-card/product-card.c
               </div>
             }
 
-            <!-- Price summary -->
-            <div class="px-4 py-3 border-t border-[#F0F0F0]">
-              <div class="space-y-2">
-                <div class="flex justify-between text-[13px]">
-                  <span class="text-[#666]">
-                    MRP ({{ cartStore.itemCount() }} items)
-                  </span>
-                  <span class="text-[#1A1A1A] font-medium">
-                    {{ fmt(cartStore.total()) }}
-                  </span>
+            <!-- Bill details -->
+            <div class="px-4 py-4 border-t border-[#F0F0F0]">
+              <h3 class="text-[14px] font-bold text-[#1A1A1A] mb-3">Bill details</h3>
+              <div class="space-y-2.5">
+
+                <!-- Items total -->
+                <div class="flex items-center justify-between text-[13px]">
+                  <span class="text-[#1A1A1A]">Items total</span>
+                  <div class="flex items-center gap-2">
+                    @if (totalSavings() > 0) {
+                      <span class="bg-[#E8F5E9] text-[#0C831F] text-[11px]
+                                   font-semibold px-1.5 py-0.5 rounded">
+                        Saved ₹{{ totalSavings().toFixed(0) }}
+                      </span>
+                      <span class="text-[#999] line-through text-[12px]">
+                        ₹{{ totalMrp().toFixed(0) }}
+                      </span>
+                    }
+                    <span class="text-[#1A1A1A] font-semibold">
+                      {{ fmt(cartStore.total()) }}
+                    </span>
+                  </div>
                 </div>
+
                 @if (appliedCoupon()) {
                   <div class="flex justify-between text-[13px] text-[#0C831F]">
                     <span>Coupon discount</span>
                     <span>− {{ fmt(appliedCoupon()!.discountAmount) }}</span>
                   </div>
                 }
-                <div class="flex justify-between text-[13px]">
-                  <span class="text-[#666]">Delivery fee</span>
+
+                <!-- Delivery charge -->
+                <div class="flex items-center justify-between text-[13px]">
+                  <div class="flex items-center gap-1">
+                    <span class="text-[#1A1A1A]">Delivery charge</span>
+                    <span class="material-icons text-[#999] text-[14px]
+                                 cursor-default" title="Free delivery on orders above ₹199">info</span>
+                  </div>
                   @if (deliveryFee(cartStore.total()) === 0) {
-                    <span class="text-[#0C831F] font-semibold">FREE</span>
+                    <div class="flex items-center gap-1">
+                      <span class="text-[#999] line-through text-[12px]">₹29</span>
+                      <span class="text-[#0C831F] font-semibold">FREE</span>
+                    </div>
                   } @else {
-                    <span class="text-[#1A1A1A]">
-                      {{ fmt(deliveryFee(cartStore.total())) }}
-                    </span>
+                    <span class="text-[#1A1A1A]">₹{{ deliveryFee(cartStore.total()) }}</span>
                   }
                 </div>
-                <div class="border-t border-dashed border-[#E0E0E0] pt-2
-                            flex justify-between">
-                  <span class="text-[15px] font-bold text-[#1A1A1A]">To Pay</span>
+
+                <!-- Handling charge -->
+                <div class="flex items-center justify-between text-[13px]">
+                  <div class="flex items-center gap-1">
+                    <span class="text-[#1A1A1A]">Handling charge</span>
+                    <span class="material-icons text-[#999] text-[14px]
+                                 cursor-default" title="Small fee to ensure safe delivery">info</span>
+                  </div>
+                  <span class="text-[#1A1A1A]">₹{{ HANDLING_CHARGE }}</span>
+                </div>
+
+                <!-- Grand total -->
+                <div class="border-t border-dashed border-[#E0E0E0] pt-2.5
+                            flex items-center justify-between">
+                  <div class="flex items-center gap-1">
+                    <span class="text-[15px] font-bold text-[#1A1A1A]">Grand total</span>
+                    <span class="material-icons text-[#999] text-[14px] cursor-default"
+                          title="Inclusive of all taxes">info</span>
+                  </div>
                   <span class="text-[15px] font-bold text-[#1A1A1A]">
                     {{ fmt(totalToPay(cartStore.total())) }}
                   </span>
                 </div>
+
               </div>
+
+              <!-- Total savings banner (bottom) -->
+              @if (totalSavings() > 0) {
+                <div class="mt-3 bg-[#EBF5FB] rounded-[10px]
+                            px-4 py-2.5 flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="material-icons text-[#1565C0] text-[18px]">savings</span>
+                    <span class="text-[13px] font-semibold text-[#1565C0]">Your total savings</span>
+                  </div>
+                  <span class="text-[13px] font-bold text-[#1565C0]">
+                    ₹{{ totalSavings().toFixed(0) }}
+                  </span>
+                </div>
+              }
+            </div>
+
+            <!-- Cancellation Policy -->
+            <div class="px-4 py-4 border-t border-[#F0F0F0]">
+              <p class="text-[13px] font-bold text-[#1A1A1A] mb-1">Cancellation Policy</p>
+              <p class="text-[12px] text-[#666] leading-relaxed">
+                Orders cannot be cancelled once packed for delivery. In case of unexpected delays,
+                a refund will be provided, if applicable.
+              </p>
             </div>
 
           }
@@ -261,22 +349,72 @@ import { ProductCardComponent } from '../../products/product-card/product-card.c
               class="w-full bg-[#0C831F] text-white rounded-[12px]
                      h-[52px] flex items-center justify-between px-5
                      hover:bg-[#0a6b19] transition btn-press">
-              <span class="text-[15px] font-bold">Proceed to Checkout</span>
-              <span class="text-[15px] font-bold">
-                {{ fmt(totalToPay(cartStore.total())) }} →
+              <div class="text-left">
+                <p class="text-[15px] font-bold leading-tight">
+                  {{ fmt(totalToPay(cartStore.total())) }}
+                </p>
+                <p class="text-[10px] font-medium opacity-80 uppercase tracking-wide">Total</p>
+              </div>
+              <span class="text-[14px] font-bold">
+                @if (authStore.isAuthenticated()) {
+                  Proceed to Checkout →
+                } @else {
+                  Login to Proceed →
+                }
               </span>
             </button>
           </div>
         }
 
       </div>
+
+      @if (shareModalOpen()) {
+        <div class="fixed inset-0 z-[200] flex items-end sm:items-center justify-center"
+             (click)="shareModalOpen.set(false)">
+          <div class="bg-white w-full sm:max-w-[380px] rounded-t-[24px] sm:rounded-[24px]
+                      shadow-[0_-4px_40px_rgba(0,0,0,0.15)] p-6"
+               (click)="$event.stopPropagation()">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-[16px] font-bold text-[#1A1A1A]">Share Cart</h3>
+              <button (click)="shareModalOpen.set(false)"
+                class="w-8 h-8 rounded-full hover:bg-[#F8F8F8] flex items-center justify-center">
+                <span class="material-icons text-[20px] text-[#666]">close</span>
+              </button>
+            </div>
+            <p class="text-[13px] text-[#666] mb-4">
+              Share this link — friends can view your cart and add items to theirs.
+            </p>
+            <div class="flex gap-2 mb-4">
+              <input [value]="shareUrl()" readonly
+                class="flex-1 border border-[#E0E0E0] rounded-[10px] px-3 py-2.5
+                       text-[12px] text-[#666] bg-[#F8F8F8] outline-none truncate" />
+              <button (click)="copyShareLink()"
+                class="flex-shrink-0 bg-[#0C831F] text-white rounded-[10px]
+                       px-4 py-2.5 text-[13px] font-semibold hover:bg-[#0a6b19] transition
+                       flex items-center gap-1.5 min-w-[90px] justify-center">
+                <span class="material-icons text-[16px]">
+                  {{ shareCopied() ? 'check' : 'content_copy' }}
+                </span>
+                {{ shareCopied() ? 'Copied!' : 'Copy' }}
+              </button>
+            </div>
+            <button (click)="shareVia()"
+              class="w-full border-2 border-[#E0E0E0] rounded-[12px] h-[48px]
+                     flex items-center justify-center gap-2 font-semibold text-[14px]
+                     text-[#1A1A1A] hover:border-[#0C831F] hover:text-[#0C831F] transition">
+              <span class="material-icons text-[20px]">share</span>
+              Share via...
+            </button>
+          </div>
+        </div>
+      }
     }
   `,
 })
 export class CartSidebarComponent {
   readonly cartService = inject(CartService);
   readonly cartStore = inject(CartStore);
-  private readonly authStore = inject(AuthStore);
+  readonly authStore = inject(AuthStore);
   readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
   private readonly couponService = inject(CouponService);
@@ -284,12 +422,16 @@ export class CartSidebarComponent {
   private readonly productService = inject(ProductService);
 
   readonly fmt = formatPrice;
+  readonly HANDLING_CHARGE = 2;
 
   readonly couponCode = signal('');
   readonly appliedCoupon = signal<ICouponValidation | null>(null);
   readonly couponError = signal('');
   readonly relatedProducts = signal<IProduct[]>([]);
   readonly productImages = signal<Record<string, string>>({});
+  readonly shareModalOpen = signal(false);
+  readonly shareUrl = signal('');
+  readonly shareCopied = signal(false);
 
   constructor() {
     effect(() => {
@@ -365,6 +507,14 @@ export class CartSidebarComponent {
     this.couponCode.set('');
   }
 
+  totalMrp(): number {
+    return this.cartStore.cartItems().reduce((sum, i) => sum + i.variant.price * i.quantity, 0);
+  }
+
+  totalSavings(): number {
+    return Math.max(0, this.totalMrp() - this.cartStore.total());
+  }
+
   deliveryFee(subtotal: number): number {
     return this.cartService.deliveryFee(subtotal);
   }
@@ -372,7 +522,32 @@ export class CartSidebarComponent {
   totalToPay(subtotal: number): number {
     const couponDiscount = this.appliedCoupon()?.discountAmount ?? 0;
     const delivery = this.deliveryFee(subtotal);
-    return Math.max(0, subtotal - couponDiscount + delivery);
+    return Math.max(0, subtotal - couponDiscount + delivery + this.HANDLING_CHARGE);
+  }
+
+  shareCart(): void {
+    this.cartService.shareCart(this.cartStore.cartItems()).subscribe({
+      next: ({ shareUrl }) => {
+        this.shareUrl.set(shareUrl);
+        this.shareModalOpen.set(true);
+      },
+      error: () => {
+        navigator.clipboard.writeText(window.location.href);
+      }
+    });
+  }
+
+  copyShareLink(): void {
+    navigator.clipboard.writeText(this.shareUrl()).then(() => {
+      this.shareCopied.set(true);
+      setTimeout(() => this.shareCopied.set(false), 2000);
+    });
+  }
+
+  shareVia(): void {
+    if (navigator.share) {
+      navigator.share({ title: 'Check out my Blinkit cart!', url: this.shareUrl() });
+    }
   }
 
   proceedToCheckout(): void {

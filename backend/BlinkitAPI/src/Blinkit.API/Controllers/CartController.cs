@@ -71,6 +71,23 @@ public sealed class CartController(ISender sender) : ControllerBase
         var cart = await sender.Send(new MergeCartCommand(UserId, req.Items));
         return Ok(cart);
     }
+
+    [AllowAnonymous]
+    [HttpPost("share")]
+    public async Task<IActionResult> ShareCart([FromBody] List<SharedCartItemDto> items, CancellationToken ct)
+    {
+        var result = await sender.Send(new ShareCartCommand(items), ct);
+        return Ok(result);
+    }
+
+    [AllowAnonymous]
+    [HttpGet("share/{token}")]
+    public async Task<IActionResult> GetSharedCart(string token, CancellationToken ct)
+    {
+        var items = await sender.Send(new GetSharedCartQuery(token), ct);
+        if (items is null) return NotFound();
+        return Ok(items);
+    }
 }
 
 public record AddItemRequest(Guid ProductId, Guid VariantId, int Quantity);

@@ -225,4 +225,17 @@ export class CartService {
     const amount = subtotal !== undefined ? subtotal : this.cartStore.total();
     return amount >= 199 ? 0 : 29;
   }
+
+  shareCart(items: ICartItem[]): Observable<{ shareUrl: string; token: string }> {
+    const body = items.map(i => ({
+      productId: i.productId,
+      productName: i.product.name,
+      variantId: i.variantId,
+      variantUnit: i.variant.unit,
+      imageUrl: i.variant.imageUrl,
+      quantity: i.quantity,
+      unitPrice: i.unitPrice,
+    }));
+    return this.http.post<{ shareUrl: string; token: string }>('/api/cart/share', body);
+  }
 }
