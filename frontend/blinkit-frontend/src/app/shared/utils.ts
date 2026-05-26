@@ -72,3 +72,29 @@ export function onImgError(event: Event, category: string): void {
   img.src = getCategoryFallback(category);
   img.onerror = null;
 }
+
+/**
+ * Resolves any image URL to a fully usable src string:
+ *
+ *  - null / empty          → getCategoryFallback(categoryName)
+ *  - absolute http(s) URL  → returned as-is (CDN, Unsplash, Pexels, etc.)
+ *  - relative /uploads/… path → prepended with the API base URL so the
+ *                               browser fetches from the correct origin
+ *  - anything else         → getCategoryFallback(categoryName)
+ */
+export function resolveImageUrl(
+  imageUrl: string | null | undefined,
+  categoryName = '',
+  apiBaseUrl = 'https://localhost:7001',
+): string {
+  if (!imageUrl || imageUrl.trim() === '') {
+    return getCategoryFallback(categoryName);
+  }
+  if (imageUrl.startsWith('https://') || imageUrl.startsWith('http://')) {
+    return imageUrl;
+  }
+  if (imageUrl.startsWith('/uploads/')) {
+    return `${apiBaseUrl}${imageUrl}`;
+  }
+  return getCategoryFallback(categoryName);
+}

@@ -8,7 +8,7 @@ import { OrderService } from '../../../core/services/order.service';
 import { CartService } from '../../../core/services/cart.service';
 import { ImageService } from '../../../core/services/image.service';
 import { IOrder, IOrderItem } from '../../../core/models';
-import { formatPrice, timeAgo } from '../../../shared/utils';
+import { formatPrice, resolveImageUrl, timeAgo } from '../../../shared/utils';
 import { AccountSidebarComponent } from '../../../shared/components/account-sidebar/account-sidebar.component';
 
 interface StatusInfo {
@@ -104,7 +104,7 @@ const STATUS_MAP: Record<string, StatusInfo> = {
                 <!-- Product thumbnails -->
                 <div class="px-5 py-4 flex items-center gap-2">
                   @for (item of thumbnails(order.items); track item.id) {
-                    <img [src]="orderImages()[item.productId] || item.productImageUrl"
+                    <img [src]="resolveImageUrl(orderImages()[item.productId] || item.productImageUrl)"
                          class="w-[72px] h-[72px] object-cover rounded-[10px]
                                 border border-[#F0F0F0]"
                          loading="lazy" (error)="onImgError($event)">
@@ -167,6 +167,7 @@ export class OrderHistoryComponent implements OnInit {
 
   fmt = formatPrice;
   ago = timeAgo;
+  protected readonly resolveImageUrl = resolveImageUrl;
 
   ngOnInit(): void {
     this.orderService.getOrders().subscribe({

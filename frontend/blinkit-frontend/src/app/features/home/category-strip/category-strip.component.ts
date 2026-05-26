@@ -4,6 +4,7 @@ import {
 import { ProductService } from '../../../core/services/product.service';
 import { ImageService } from '../../../core/services/image.service';
 import { ICategory } from '../../../core/models';
+import { resolveImageUrl } from '../../../shared/utils';
 
 @Component({
   selector: 'app-category-strip',
@@ -56,7 +57,7 @@ import { ICategory } from '../../../core/models';
 
                 <div class="w-12 h-12 rounded-full overflow-hidden
                             border-2 border-[#F0F0F0] flex-shrink-0 bg-[#F8F8F8]">
-                  <img [src]="categoryImages()[cat.id] || cat.iconUrl"
+                  <img [src]="resolveImageUrl(categoryImages()[cat.id] || cat.iconUrl, cat.name)"
                        [alt]="cat.name"
                        loading="lazy"
                        class="w-full h-full object-cover">
@@ -87,6 +88,7 @@ export class CategoryStripComponent implements OnInit {
   readonly loading = signal(true);
   readonly selected = signal<string | null>(null);
   readonly skeletons = Array(10);
+  protected readonly resolveImageUrl = resolveImageUrl;
 
   ngOnInit(): void {
     this.productService.getCategories().subscribe({
@@ -94,7 +96,9 @@ export class CategoryStripComponent implements OnInit {
         this.categories.set(cats);
         this.loading.set(false);
         cats.forEach(cat => {
-          this.imageService.getCategoryImage(cat.name, cat.id).subscribe(url => {
+          // Pass existing iconUrl — uploaded images (/uploads/) are returned
+          // immediately and never replaced by an Unsplash result.
+          this.imageService.getCategoryImage(cat.name, cat.id, cat.iconUrl).subscribe(url => {
             this.categoryImages.update(imgs => ({ ...imgs, [cat.id]: url }));
           });
         });

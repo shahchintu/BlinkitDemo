@@ -7,5 +7,6 @@ public record ProductVariantDto(
     decimal? DiscountPrice,
     int StockQty,
     string ImageUrl,
-    int DisplayOrder
+    int DisplayOrder,
+    string ImageType  // "uploaded" | "url"
 );

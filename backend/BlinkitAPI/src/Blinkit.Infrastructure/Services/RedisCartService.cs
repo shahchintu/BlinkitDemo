@@ -74,14 +74,16 @@ public class RedisCartService(IDistributedCache cache, IBlinkitDbContext db) : I
                     item.VariantImageUrl = string.IsNullOrEmpty(variant.ImageUrl) ? firstImageUrl : variant.ImageUrl;
                     item.UnitPrice = variant.DiscountPrice ?? variant.Price;
                     item.Product = GetProductsQueryHandler.MapToDto(product);
+                    var resolvedVariantImageUrl = string.IsNullOrEmpty(variant.ImageUrl) ? firstImageUrl : variant.ImageUrl;
                     item.Variant = new ProductVariantDto(
                         variant.Id,
                         variant.Unit,
                         variant.Price,
                         variant.DiscountPrice,
                         variant.StockQty,
-                        string.IsNullOrEmpty(variant.ImageUrl) ? firstImageUrl : variant.ImageUrl,
-                        variant.DisplayOrder
+                        resolvedVariantImageUrl,
+                        variant.DisplayOrder,
+                        resolvedVariantImageUrl.Contains("/uploads/") ? "uploaded" : "url"
                     );
                     enrichedItems.Add(item);
                 }

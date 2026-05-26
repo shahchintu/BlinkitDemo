@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import { AdminService, DashboardStats } from '../../../core/services/admin.service';
 import { ImageService } from '../../../core/services/image.service';
 import { IOrder } from '../../../core/models';
-import { formatPrice, timeAgo } from '../../../shared/utils';
+import { formatPrice, resolveImageUrl, timeAgo } from '../../../shared/utils';
 
 const STATUS_CHIP: Record<string, string> = {
   Placed:         'bg-[#E3F2FD] text-[#1976D2]',
@@ -101,7 +101,7 @@ const STATUS_CHIP: Record<string, string> = {
             @for (p of stats()?.topProducts ?? []; track p.productId; let i = $index) {
               <div class="flex items-center gap-3 px-4 py-4 hover:bg-[#F8FFFE] transition-colors">
                 <span class="text-[13px] font-bold text-[#666666] w-5 flex-shrink-0 text-center">{{ i + 1 }}</span>
-                <img [src]="topProductImages()[p.productId] || p.imageUrl" [alt]="p.name" class="w-10 h-10 object-contain rounded-lg bg-[#F8F8F8] p-1 flex-shrink-0" loading="lazy" />
+                <img [src]="resolveImageUrl(topProductImages()[p.productId] || p.imageUrl)" [alt]="p.name" class="w-10 h-10 object-contain rounded-lg bg-[#F8F8F8] p-1 flex-shrink-0" loading="lazy" />
                 <span class="text-[14px] font-medium text-[#1A1A1A] flex-1 truncate">{{ p.name }}</span>
                 <span class="text-[13px] text-[#666666] flex-shrink-0">{{ p.soldCount }} sold</span>
               </div>
@@ -124,6 +124,7 @@ export class AdminDashboardComponent implements OnInit {
   readonly skeletons = Array(4);
 
   fmt = formatPrice;
+  protected readonly resolveImageUrl = resolveImageUrl;
 
   ngOnInit(): void {
     this.adminService.getStats().subscribe({

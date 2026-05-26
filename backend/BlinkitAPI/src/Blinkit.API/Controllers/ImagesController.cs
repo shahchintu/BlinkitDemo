@@ -53,14 +53,28 @@ public sealed class ImagesController(IUnsplashService unsplash, IConnectionMulti
     private static string BuildSearchQuery(string productName, string category)
     {
         var clean = productName
-            .Replace("Amul", "",      StringComparison.OrdinalIgnoreCase)
+            .Replace("Amul",      "", StringComparison.OrdinalIgnoreCase)
             .Replace("Britannia", "", StringComparison.OrdinalIgnoreCase)
-            .Replace("Parle", "",     StringComparison.OrdinalIgnoreCase)
-            .Replace("Nestle", "",    StringComparison.OrdinalIgnoreCase)
+            .Replace("Parle",     "", StringComparison.OrdinalIgnoreCase)
+            .Replace("Nestle",    "", StringComparison.OrdinalIgnoreCase)
             .Replace("Haldiram", "",  StringComparison.OrdinalIgnoreCase)
-            .Replace("Lay's", "",     StringComparison.OrdinalIgnoreCase)
-            .Replace("Bingo", "",     StringComparison.OrdinalIgnoreCase)
-            .Replace("Kurkure", "",   StringComparison.OrdinalIgnoreCase)
+            .Replace("Lay's",    "",  StringComparison.OrdinalIgnoreCase)
+            .Replace("Bingo",    "",  StringComparison.OrdinalIgnoreCase)
+            .Replace("Kurkure",  "",  StringComparison.OrdinalIgnoreCase)
+            // Indian spice/oil/FMCG brands — must be stripped BEFORE keyword checks
+            // to avoid partial matches (e.g. "Catch" → Contains("Cat") = true)
+            .Replace("Catch",    "",  StringComparison.OrdinalIgnoreCase)
+            .Replace("Everest",  "",  StringComparison.OrdinalIgnoreCase)
+            .Replace("MDH",      "",  StringComparison.OrdinalIgnoreCase)
+            .Replace("Tata",     "",  StringComparison.OrdinalIgnoreCase)
+            .Replace("ITC",      "",  StringComparison.OrdinalIgnoreCase)
+            .Replace("Dabur",    "",  StringComparison.OrdinalIgnoreCase)
+            .Replace("Patanjali","",  StringComparison.OrdinalIgnoreCase)
+            .Replace("Fortune",  "",  StringComparison.OrdinalIgnoreCase)
+            .Replace("Aashirvaad","", StringComparison.OrdinalIgnoreCase)
+            .Replace("Saffola",  "",  StringComparison.OrdinalIgnoreCase)
+            .Replace("Marico",   "",  StringComparison.OrdinalIgnoreCase)
+            .Replace("Sundrop",  "",  StringComparison.OrdinalIgnoreCase)
             .Trim();
 
         if (Contains(clean, "Milk") || Contains(clean, "Toned"))   return "fresh milk glass bottle white";
@@ -84,7 +98,30 @@ public sealed class ImagesController(IUnsplashService unsplash, IConnectionMulti
         if (Contains(clean, "Shampoo"))                             return "shampoo bottle hair care";
         if (Contains(clean, "Toothpaste"))                          return "toothpaste tube mint";
         if (Contains(clean, "Diaper") || Contains(clean, "Pamper")) return "baby diaper soft white";
-        if (Contains(clean, "Dog") || Contains(clean, "Cat"))      return "pet food bowl dog cat";
+        // Pet food check — only after all brand names are stripped
+        if (Contains(clean, " Dog ") || Contains(clean, " Cat ") ||
+            clean.EndsWith(" Dog",  StringComparison.OrdinalIgnoreCase) ||
+            clean.EndsWith(" Cat",  StringComparison.OrdinalIgnoreCase) ||
+            clean.StartsWith("Dog ", StringComparison.OrdinalIgnoreCase) ||
+            clean.StartsWith("Cat ", StringComparison.OrdinalIgnoreCase))
+            return "pet food bowl dog cat";
+
+        // Spices & masalas — Masala, Oil & More category
+        if (Contains(clean, "Chilli") || Contains(clean, "Chili"))  return "red chilli powder spice bowl";
+        if (Contains(clean, "Turmeric") || Contains(clean, "Haldi")) return "turmeric powder yellow spice";
+        if (Contains(clean, "Pepper") || Contains(clean, "Mirch"))  return "black pepper spice grinder";
+        if (Contains(clean, "Cumin") || Contains(clean, "Jeera"))   return "cumin seeds spice Indian";
+        if (Contains(clean, "Coriander") || Contains(clean, "Dhaniya")) return "coriander powder spice";
+        if (Contains(clean, "Cardamom") || Contains(clean, "Elaichi")) return "green cardamom spice pods";
+        if (Contains(clean, "Clove") || Contains(clean, "Laung"))   return "cloves spice dried aromatic";
+        if (Contains(clean, "Cinnamon") || Contains(clean, "Dalchini")) return "cinnamon sticks spice";
+        if (Contains(clean, "Masala"))                               return "Indian spice masala powder mix";
+        if (Contains(clean, "Mustard") || Contains(clean, "Sarson")) return "mustard seeds yellow spice";
+        if (Contains(clean, "Fenugreek") || Contains(clean, "Methi")) return "fenugreek seeds spice";
+        if (Contains(clean, "Saffron") || Contains(clean, "Kesar")) return "saffron threads golden spice";
+        if (Contains(clean, "Vinegar"))                              return "vinegar bottle condiment";
+        if (Contains(clean, "Salt"))                                 return "salt white crystals bowl";
+        if (Contains(clean, "Sugar"))                                return "sugar white crystals bowl";
 
         return $"{category} {clean} food product".Trim();
     }

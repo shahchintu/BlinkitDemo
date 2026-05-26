@@ -1,17 +1,19 @@
 import {
-  ChangeDetectionStrategy, Component, inject, OnInit, signal,
+  ChangeDetectionStrategy, Component, inject, OnInit, signal, ViewChild,
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AdminService } from '../../../core/services/admin.service';
 import { ImageService } from '../../../core/services/image.service';
 import { ICategory } from '../../../core/models';
+import { resolveImageUrl } from '../../../shared/utils';
+import { ImagePickerComponent } from '../../../shared/components/image-picker/image-picker.component';
 
 @Component({
   selector: 'app-admin-categories',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, MatSnackBarModule],
+  imports: [ReactiveFormsModule, MatSnackBarModule, ImagePickerComponent],
   template: `
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-2xl font-bold text-[#1A1A1A]">Categories</h1>
@@ -22,38 +24,72 @@ import { ICategory } from '../../../core/models';
     </div>
 
     @if (showForm()) {
-      <form [formGroup]="catForm" (ngSubmit)="saveCategory()" class="bg-white rounded-xl border border-[#E0E0E0] p-4 mb-6 grid grid-cols-4 gap-3 items-end shadow-sm">
-        <div class="col-span-1">
-          <label class="block text-xs font-medium text-[#666666] mb-1 uppercase tracking-wider">Name *</label>
-          <input formControlName="name" placeholder="e.g. Beverages" class="w-full border border-[#E0E0E0] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#0C831F]" />
+      <form [formGroup]="catForm" (ngSubmit)="saveCategory()"
+        class="bg-white rounded-xl border border-[#E0E0E0] p-4 mb-6 shadow-sm space-y-4">
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-[#666666] mb-1 uppercase tracking-wider">
+              Name *
+            </label>
+            <input formControlName="name" placeholder="e.g. Beverages"
+              class="w-full border border-[#E0E0E0] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#0C831F]" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-[#666666] mb-1 uppercase tracking-wider">
+              Slug *
+            </label>
+            <input formControlName="slug" placeholder="beverages"
+              class="w-full border border-[#E0E0E0] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#0C831F]" />
+          </div>
         </div>
-        <div class="col-span-1">
-          <label class="block text-xs font-medium text-[#666666] mb-1 uppercase tracking-wider">Slug *</label>
-          <input formControlName="slug" placeholder="beverages" class="w-full border border-[#E0E0E0] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#0C831F]" />
+
+        <!-- Category icon picker -->
+        <div class="bg-gray-50 rounded-xl p-4 border border-[#E0E0E0]">
+          <app-image-picker
+            #catImgPicker
+            [entityId]="editingCat()?.id || ''"
+            entityType="category"
+            [currentImageUrl]="catIconUrl()"
+            label="Category Icon *"
+            (imageUrlChange)="onCatIconChange($event)">
+          </app-image-picker>
         </div>
-        <div class="col-span-1">
-          <label class="block text-xs font-medium text-[#666666] mb-1 uppercase tracking-wider">Icon URL *</label>
-          <input formControlName="iconUrl" placeholder="https://..." class="w-full border border-[#E0E0E0] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#0C831F]" />
+
+        <div class="flex gap-2">
+          <button type="submit"
+            class="bg-[#0C831F] text-white px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 hover:bg-green-700"
+            [disabled]="catForm.invalid || savingCat()">
+            {{ savingCat() ? 'Saving…' : (editingCat() ? 'Update' : 'Save') }}
+          </button>
+          <button type="button"
+            class="border border-[#E0E0E0] text-sm px-4 py-2 rounded-xl hover:border-[#0C831F] transition-colors"
+            (click)="toggleAddForm()">Cancel</button>
         </div>
-        <button type="submit" class="bg-[#0C831F] text-white px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-50 hover:bg-green-700"
-          [disabled]="catForm.invalid || savingCat()">
-          {{ savingCat() ? 'Saving...' : (editingCat() ? 'Update' : 'Save') }}
-        </button>
       </form>
     }
 
     @if (loading()) {
-      <div class="space-y-2">@for (_ of skeletons; track $index) { <div class="h-14 bg-white rounded-xl border border-[#E0E0E0] animate-pulse"></div> }</div>
+      <div class="space-y-2">
+        @for (_ of skeletons; track $index) {
+          <div class="h-14 bg-white rounded-xl border border-[#E0E0E0] animate-pulse"></div>
+        }
+      </div>
     } @else {
       <div class="bg-white rounded-xl border border-[#E0E0E0] overflow-hidden shadow-sm">
-        <div class="grid grid-cols-[56px_2fr_1fr_100px_100px_120px] gap-3 px-4 py-3 bg-gray-50 text-[10px] font-bold text-[#666666] border-b border-[#E0E0E0] uppercase tracking-wider">
-          <span>Icon</span><span>Name</span><span>Slug</span><span class="text-center">Order</span><span class="text-center">Active</span><span class="text-right">Actions</span>
+        <div class="grid grid-cols-[56px_2fr_1fr_100px_100px_120px] gap-3 px-4 py-3 bg-gray-50
+                    text-[10px] font-bold text-[#666666] border-b border-[#E0E0E0] uppercase tracking-wider">
+          <span>Icon</span><span>Name</span><span>Slug</span>
+          <span class="text-center">Order</span><span class="text-center">Active</span>
+          <span class="text-right">Actions</span>
         </div>
         @for (cat of categories(); track cat.id; let i = $index) {
-          <div class="grid grid-cols-[56px_2fr_1fr_100px_100px_120px] gap-3 px-4 py-3 border-b border-[#F0F0F0] last:border-0 items-center hover:bg-[#F9F9F9] transition-colors">
+          <div class="grid grid-cols-[56px_2fr_1fr_100px_100px_120px] gap-3 px-4 py-3
+                      border-b border-[#F0F0F0] last:border-0 items-center hover:bg-[#F9F9F9] transition-colors">
             <div class="w-10 h-10 rounded-lg bg-gray-50 p-1 border border-[#F0F0F0] overflow-hidden">
-              <img [src]="categoryImages()[cat.id] || cat.iconUrl" [alt]="cat.name" 
-                class="w-full h-full object-contain" 
+              <img [src]="resolveImageUrl(categoryImages()[cat.id] || cat.iconUrl, cat.name)"
+                [alt]="cat.name"
+                class="w-full h-full object-contain"
                 loading="lazy"
                 (error)="onImgError($event, cat.name)" />
             </div>
@@ -63,10 +99,10 @@ import { ICategory } from '../../../core/models';
             </div>
             <span class="text-xs text-[#666666] font-mono">{{ cat.slug }}</span>
             <div class="flex justify-center gap-1">
-              <button class="text-[#666666] text-lg hover:text-[#0C831F] disabled:opacity-20 p-1" [disabled]="i === 0"
-                (click)="moveUp(i)">↑</button>
-              <button class="text-[#666666] text-lg hover:text-[#0C831F] disabled:opacity-20 p-1" [disabled]="i === categories().length - 1"
-                (click)="moveDown(i)">↓</button>
+              <button class="text-[#666666] text-lg hover:text-[#0C831F] disabled:opacity-20 p-1"
+                [disabled]="i === 0" (click)="moveUp(i)">↑</button>
+              <button class="text-[#666666] text-lg hover:text-[#0C831F] disabled:opacity-20 p-1"
+                [disabled]="i === categories().length - 1" (click)="moveDown(i)">↓</button>
             </div>
             <div class="flex justify-center">
               <button class="relative inline-flex w-10 h-5 rounded-full transition-colors duration-200 focus:outline-none"
@@ -77,32 +113,37 @@ import { ICategory } from '../../../core/models';
               </button>
             </div>
             <div class="flex justify-end gap-3 text-xs">
-              <button class="text-[#0C831F] font-semibold hover:underline" (click)="editCategory(cat)">Edit</button>
-              <!-- Optional: Add delete if needed, but active toggle is safer for now -->
+              <button class="text-[#0C831F] font-semibold hover:underline" (click)="editCategory(cat)">
+                Edit
+              </button>
             </div>
           </div>
         }
       </div>
     }
   `,
-
 })
 export class AdminCategoriesComponent implements OnInit {
   private readonly adminService = inject(AdminService);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly snackBar     = inject(MatSnackBar);
   private readonly imageService = inject(ImageService);
 
-  readonly categories = signal<ICategory[]>([]);
+  /** Reference to the category icon picker (inside @if, static: false) */
+  @ViewChild('catImgPicker') catImgPicker?: ImagePickerComponent;
+
+  readonly categories    = signal<ICategory[]>([]);
   readonly categoryImages = signal<Record<string, string>>({});
-  readonly loading = signal(true);
-  readonly showForm = signal(false);
-  readonly editingCat = signal<ICategory | null>(null);
-  readonly savingCat = signal(false);
-  readonly skeletons = Array(8);
+  readonly catIconUrl    = signal('');   // tracks the URL shown in the picker
+  readonly loading       = signal(true);
+  readonly showForm      = signal(false);
+  readonly editingCat    = signal<ICategory | null>(null);
+  readonly savingCat     = signal(false);
+  readonly skeletons     = Array(8);
+  protected readonly resolveImageUrl = resolveImageUrl;
 
   readonly catForm = new FormGroup({
-    name: new FormControl('', Validators.required),
-    slug: new FormControl('', Validators.required),
+    name:    new FormControl('', Validators.required),
+    slug:    new FormControl('', Validators.required),
     iconUrl: new FormControl('', Validators.required),
   });
 
@@ -130,61 +171,97 @@ export class AdminCategoriesComponent implements OnInit {
   }
 
   private fetchCatImage(cat: ICategory): void {
-    this.imageService.getCategoryImage(cat.name, cat.id)
+    // Pass existing iconUrl — uploaded images (/uploads/) are returned
+    // immediately and never replaced by an Unsplash result.
+    this.imageService.getCategoryImage(cat.name, cat.id, cat.iconUrl)
       .subscribe(url => {
         if (url) this.categoryImages.update(imgs => ({ ...imgs, [cat.id]: url }));
       });
+  }
+
+  onCatIconChange(url: string): void {
+    this.catIconUrl.set(url);
+    // Keep the reactive form in sync so Validators.required works
+    this.catForm.get('iconUrl')?.setValue(url);
   }
 
   toggleAddForm(): void {
     if (this.showForm() && this.editingCat()) {
       this.editingCat.set(null);
       this.catForm.reset();
+      this.catIconUrl.set('');
     } else {
       this.showForm.set(!this.showForm());
       this.editingCat.set(null);
       this.catForm.reset();
+      this.catIconUrl.set('');
     }
   }
 
   editCategory(cat: ICategory): void {
     this.editingCat.set(cat);
     this.showForm.set(true);
-    this.catForm.patchValue({
-      name: cat.name,
-      slug: cat.slug,
-      iconUrl: cat.iconUrl
-    });
+    this.catIconUrl.set(cat.iconUrl);
+    this.catForm.patchValue({ name: cat.name, slug: cat.slug, iconUrl: cat.iconUrl });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   saveCategory(): void {
     if (this.catForm.invalid) return;
     this.savingCat.set(true);
-    const { name, slug, iconUrl } = this.catForm.value;
-    const editing = this.editingCat();
+
+    const { name, slug } = this.catForm.value;
+    // Use catIconUrl signal (most up-to-date value from picker)
+    const iconUrl  = this.catIconUrl();
+    const isBlob   = iconUrl.startsWith('blob:');
+    const editing  = this.editingCat();
 
     if (editing) {
-      this.adminService.updateCategory(editing.id, { 
-        name: name!, 
-        slug: slug!, 
-        iconUrl: iconUrl!, 
-        displayOrder: editing.displayOrder 
+      // EDIT mode — picker uploads immediately (entityId is set), URL is always real
+      this.adminService.updateCategory(editing.id, {
+        name: name!, slug: slug!, iconUrl, displayOrder: editing.displayOrder,
       }).subscribe({
         next: () => {
           this.savingCat.set(false);
           this.snackBar.open('✓ Category updated', '', { duration: 2000 });
           this.finishSave();
         },
-        error: () => this.savingCat.set(false)
+        error: () => this.savingCat.set(false),
       });
     } else {
-      const nextOrder = this.categories().length + 1;
-      this.adminService.createCategory({ name: name!, slug: slug!, iconUrl: iconUrl!, displayOrder: nextOrder }).subscribe({
-        next: () => {
-          this.savingCat.set(false);
-          this.snackBar.open('✓ Category added', '', { duration: 2000 });
-          this.finishSave();
+      // ADD mode — create first, then upload pending file if any
+      const nextOrder   = this.categories().length + 1;
+      const iconForReq  = isBlob ? '' : iconUrl; // don't store blob URL in DB
+
+      this.adminService.createCategory({
+        name: name!, slug: slug!, iconUrl: iconForReq, displayOrder: nextOrder,
+      }).subscribe({
+        next: (created) => {
+          const picker = this.catImgPicker;
+          if (picker?.pendingFile()) {
+            // Upload pending image with the real category ID
+            picker.uploadPendingFile(created.id).subscribe({
+              next: (realUrl) => {
+                // Update category with the uploaded icon URL
+                this.adminService.updateCategory(created.id, {
+                  name: name!, slug: slug!, iconUrl: realUrl, displayOrder: nextOrder,
+                }).subscribe();
+                this.savingCat.set(false);
+                this.snackBar.open('✓ Category added', '', { duration: 2000 });
+                this.finishSave();
+              },
+              error: () => {
+                // Upload failed — category saved without icon
+                this.savingCat.set(false);
+                this.snackBar.open('✓ Category added (icon upload failed)', '', { duration: 3000 });
+                this.finishSave();
+              },
+            });
+          } else {
+            this.savingCat.set(false);
+            this.snackBar.open('✓ Category added', '', { duration: 2000 });
+            this.finishSave();
+          }
         },
         error: () => this.savingCat.set(false),
       });
@@ -193,13 +270,14 @@ export class AdminCategoriesComponent implements OnInit {
 
   private finishSave(): void {
     this.catForm.reset();
+    this.catIconUrl.set('');
     this.showForm.set(false);
     this.editingCat.set(null);
-    this.adminService.getCategories().subscribe({ 
+    this.adminService.getCategories().subscribe({
       next: cats => {
         this.categories.set(cats);
         cats.forEach(cat => this.fetchCatImage(cat));
-      }
+      },
     });
   }
 
@@ -220,20 +298,23 @@ export class AdminCategoriesComponent implements OnInit {
   reorder(cats: ICategory[]): void {
     const updated = cats.map((c, idx) => ({ ...c, displayOrder: idx + 1 }));
     this.categories.set(updated);
-    this.adminService.reorderCategories(updated.map(c => ({ categoryId: c.id, displayOrder: c.displayOrder }))).subscribe({
+    this.adminService.reorderCategories(
+      updated.map(c => ({ categoryId: c.id, displayOrder: c.displayOrder })),
+    ).subscribe({
       next: () => this.snackBar.open('✓ Order saved', '', { duration: 1500 }),
     });
   }
 
   toggleActive(id: string): void {
     this.adminService.toggleCategoryActive(id).subscribe({
-      next: () => this.categories.update(list => list.map(c => c.id === id ? { ...c, isActive: !c.isActive } : c)),
+      next: () =>
+        this.categories.update(list =>
+          list.map(c => c.id === id ? { ...c, isActive: !c.isActive } : c),
+        ),
     });
   }
 
   onImgError(event: Event, categoryName: string): void {
-    const img = event.target as HTMLImageElement;
-    // Get fallback URL directly
     const colors: Record<string, string> = {
       'Fruits & Vegetables': '4CAF50',
       'Dairy & Eggs':        'FFC107',
@@ -252,6 +333,7 @@ export class AdminCategoriesComponent implements OnInit {
       'Electronics':         '37474F',
     };
     const color = colors[categoryName] ?? '0C831F';
-    img.src = `https://dummyjson.com/image/200x200/${color}/ffffff?text=${encodeURIComponent(categoryName.substring(0, 8))}`;
+    (event.target as HTMLImageElement).src =
+      `https://dummyjson.com/image/200x200/${color}/ffffff?text=${encodeURIComponent(categoryName.substring(0, 8))}`;
   }
 }

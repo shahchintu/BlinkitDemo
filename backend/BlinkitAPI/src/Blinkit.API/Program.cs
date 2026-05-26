@@ -8,6 +8,7 @@ using Blinkit.Infrastructure.Email;
 using Blinkit.Infrastructure.Payment;
 using Blinkit.Infrastructure.Repositories;
 using Blinkit.Infrastructure.Services;
+using Microsoft.AspNetCore.Http.Features;
 using Resend;
 using FluentValidation;
 using MediatR;
@@ -59,7 +60,18 @@ builder.Services.AddScoped<ICouponRepository, CouponRepository>();
 builder.Services.AddScoped<IRazorpayService, RazorpayService>();
 builder.Services.AddScoped<IEmailService, ResendEmailService>();
 builder.Services.AddScoped<IUnsplashService, UnsplashService>();
+builder.Services.AddScoped<IImageUploadService, ImageUploadService>();
 builder.Services.AddScoped<IBlinkitDbContext>(sp => sp.GetRequiredService<BlinkitDbContext>());
+
+// Task 7: Allow up to 10 MB multipart uploads
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 10 * 1024 * 1024;
+});
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = 10 * 1024 * 1024;
+});
 
 builder.Services.AddHttpClient("Unsplash");
 builder.Services.AddHttpClient("Pexels");
@@ -166,6 +178,7 @@ app.MapScalarApiReference(options =>
     options.Theme = ScalarTheme.Purple;
 });
 
+app.UseStaticFiles(); // serves wwwroot/uploads/* at /uploads/*
 app.UseHttpsRedirection();
 app.UseCors("BlinkitCors");
 app.UseAuthentication();

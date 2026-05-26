@@ -5,7 +5,7 @@ import { CartStore } from '../../../core/stores/cart.store';
 import { CartService } from '../../../core/services/cart.service';
 import { ImageService } from '../../../core/services/image.service';
 import { IProduct } from '../../../core/models';
-import { formatPrice, onImgError } from '../../../shared/utils';
+import { formatPrice, onImgError, resolveImageUrl } from '../../../shared/utils';
 import { ProductVariantModalComponent } from '../product-variant-modal/product-variant-modal.component';
 
 @Component({
@@ -26,7 +26,7 @@ import { ProductVariantModalComponent } from '../product-variant-modal/product-v
       <div class="relative bg-[#F8F8F8] rounded-t-[16px] overflow-hidden"
            style="height:160px">
 
-        <img [src]="realImageUrl()"
+        <img [src]="getImageUrl()"
              [alt]="product.name"
              loading="lazy"
              (error)="onImgError($event, product.categoryName)"
@@ -190,11 +190,24 @@ export class ProductCardComponent implements OnInit {
 
   ngOnInit(): void {
     this.realImageUrl.set(this.product.imageUrl);
+    // Always call imageService — CDN URLs (cdn.grofers.com) are CORS-blocked
+    // and must be resolved via the backend.
+    // Passing product.imageUrl lets the service short-circuit and return it
+    // directly when it's an uploaded file (/uploads/…), preventing an Unsplash
+    // URL from overriding the admin-uploaded image.
     this.imageService.getProductImage(
       this.product.name,
       this.product.categoryName,
       this.product.id,
+      this.product.imageUrl,
     ).subscribe(url => { if (url) this.realImageUrl.set(url); });
+  }
+
+  getImageUrl(): string {
+    return resolveImageUrl(
+      this.realImageUrl() || this.product.imageUrl,
+      this.product.categoryName,
+    );
   }
 
   navigateToProduct(): void {

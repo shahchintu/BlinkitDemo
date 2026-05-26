@@ -13,5 +13,6 @@ public record ProductDto(
     List<ProductAttributeDto> Attributes,
     List<string> RelatedTags,
     List<string> Images,
-    bool HasVariants
+    bool HasVariants,
+    string ImageType  // "uploaded" | "url"
 );

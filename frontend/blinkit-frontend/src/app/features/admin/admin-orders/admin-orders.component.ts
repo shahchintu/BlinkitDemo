@@ -6,7 +6,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AdminService } from '../../../core/services/admin.service';
 import { ImageService } from '../../../core/services/image.service';
 import { IOrder, OrderStatus } from '../../../core/models';
-import { formatPrice, timeAgo } from '../../../shared/utils';
+import { formatPrice, resolveImageUrl, timeAgo } from '../../../shared/utils';
 import { OrderDetailComponent } from '../../orders/order-detail/order-detail.component';
 
 const ORDER_STATUSES: OrderStatus[] = ['Placed', 'Packed', 'OutForDelivery', 'Delivered', 'Cancelled'];
@@ -72,7 +72,7 @@ const STATUS_CHIP: Record<string, string> = {
               @if (order.items.length > 0) {
                 <div class="flex gap-2 mb-3 flex-wrap">
                   @for (item of order.items; track item.id) {
-                    <img [src]="orderItemImages()[item.productId] || item.productImageUrl"
+                    <img [src]="resolveImageUrl(orderItemImages()[item.productId] || item.productImageUrl)"
                          [alt]="item.productName"
                          class="w-12 h-12 object-cover rounded-lg border border-[#E0E0E0] bg-white p-0.5"
                          loading="lazy" />
@@ -116,6 +116,7 @@ export class AdminOrdersComponent implements OnInit {
 
   fmt = formatPrice;
   ago = timeAgo;
+  protected readonly resolveImageUrl = resolveImageUrl;
 
   ngOnInit(): void { this.load(); }
 

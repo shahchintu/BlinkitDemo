@@ -17,7 +17,7 @@ import { ImageService } from '../../../core/services/image.service';
 import { ProductService } from '../../../core/services/product.service';
 import { LoginPromptDialogComponent } from '../../../shared/login-prompt-dialog/login-prompt-dialog.component';
 import { ICartItem, ICouponValidation, IProduct } from '../../../core/models';
-import { formatPrice, getCategoryFallback } from '../../../shared/utils';
+import { formatPrice, getCategoryFallback, resolveImageUrl } from '../../../shared/utils';
 import { ScrollableRowComponent } from '../../../shared/components/scrollable-row/scrollable-row.component';
 import { ProductCardComponent } from '../../products/product-card/product-card.component';
 
@@ -130,7 +130,7 @@ import { ProductCardComponent } from '../../products/product-card/product-card.c
                   <div class="w-[64px] h-[64px] flex-shrink-0
                               bg-[#F8F8F8] rounded-[10px]
                               flex items-center justify-center overflow-hidden">
-                    <img [src]="productImages()[item.productId] || item.variant.imageUrl"
+                    <img [src]="resolveImageUrl(productImages()[item.productId] || item.variant.imageUrl, item.product.categoryName)"
                          [alt]="item.product.name"
                          loading="lazy"
                          class="w-full h-full object-contain p-1"
@@ -423,6 +423,7 @@ export class CartSidebarComponent {
 
   readonly fmt = formatPrice;
   readonly HANDLING_CHARGE = 2;
+  protected readonly resolveImageUrl = resolveImageUrl;
 
   readonly couponCode = signal('');
   readonly appliedCoupon = signal<ICouponValidation | null>(null);

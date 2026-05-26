@@ -168,6 +168,7 @@ H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.API\bin\D
 H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.API\bin\Debug\net8.0\Blinkit.API.pdb
 H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.API\obj\Debug\net8.0\Blinkit.API.genruntimeconfig.cache
 H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.API\obj\Debug\net8.0\ref\Blinkit.API.dll
+H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.API\bin\Debug\net8.0\Blinkit.API.staticwebassets.runtime.json
 H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.API\bin\Debug\net8.0\System.Formats.Asn1.dll
 H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.API\obj\Debug\net8.0\staticwebassets\msbuild.Blinkit.API.Microsoft.AspNetCore.StaticWebAssets.props
 H:\Claude - Blinkit Project\BlinkitDemo\backend\BlinkitAPI\src\Blinkit.API\obj\Debug\net8.0\staticwebassets\msbuild.build.Blinkit.API.props

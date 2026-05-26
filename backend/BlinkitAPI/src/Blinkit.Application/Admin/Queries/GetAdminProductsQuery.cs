@@ -46,22 +46,28 @@ public class GetAdminProductsQueryHandler(IBlinkitDbContext db)
             var defDto = defaultVariant is null ? null : new ProductVariantDto(
                 defaultVariant.Id, defaultVariant.Unit, defaultVariant.Price,
                 defaultVariant.DiscountPrice, defaultVariant.StockQty,
-                defaultVariant.ImageUrl, defaultVariant.DisplayOrder);
+                defaultVariant.ImageUrl, defaultVariant.DisplayOrder,
+                ImageType(defaultVariant.ImageUrl));
 
             return new ProductDto(
                 p.Id, p.CategoryId, p.Category?.Name ?? string.Empty, p.Name, p.Slug,
                 p.Description, p.IsActive,
                 defDto!,
                 sortedVariants.Select(v => new ProductVariantDto(
-                    v.Id, v.Unit, v.Price, v.DiscountPrice, v.StockQty, v.ImageUrl, v.DisplayOrder)).ToList(),
+                    v.Id, v.Unit, v.Price, v.DiscountPrice, v.StockQty, v.ImageUrl, v.DisplayOrder,
+                    ImageType(v.ImageUrl))).ToList(),
                 p.Attributes.Select(a => new ProductAttributeDto(a.Key, a.Value)).ToList(),
                 p.Tags.Select(t => t.Tag).ToList(),
                 p.Images.OrderBy(i => i.DisplayOrder).Select(i => i.ImageUrl).ToList(),
-                sortedVariants.Count > 1
+                sortedVariants.Count > 1,
+                ImageType(p.Images.OrderBy(i => i.DisplayOrder).FirstOrDefault()?.ImageUrl ?? string.Empty)
             );
         }).ToList();
 
         var totalPages = (int)Math.Ceiling(total / (double)req.PageSize);
         return new PagedResult<ProductDto>(dtos, total, req.Page, req.PageSize, totalPages);
     }
+
+    private static string ImageType(string imageUrl) =>
+        imageUrl.Contains("/uploads/") ? "uploaded" : "url";
 }

@@ -8,7 +8,7 @@ import { ImageService } from '../../../core/services/image.service';
 import { CartStore } from '../../../core/stores/cart.store';
 import { CartService } from '../../../core/services/cart.service';
 import { IProduct, IProductVariant } from '../../../core/models';
-import { formatPrice, getCategoryFallback } from '../../../shared/utils';
+import { formatPrice, getCategoryFallback, resolveImageUrl } from '../../../shared/utils';
 import { ProductCardComponent } from '../product-card/product-card.component';
 import { ScrollableRowComponent } from '../../../shared/components/scrollable-row/scrollable-row.component';
 
@@ -394,6 +394,7 @@ export class ProductDetailComponent implements OnInit {
   readonly isAlsoLoading = signal(true);
 
   readonly fmt = formatPrice;
+  protected readonly resolveImageUrl = resolveImageUrl;
 
   readonly whyItems = [
     { icon: '🚚', title: 'Round The Clock Delivery', sub: 'Order any time, we deliver 24×7' },
@@ -432,10 +433,15 @@ export class ProductDetailComponent implements OnInit {
       next: p => {
         this.product.set(p);
         this.selectedVariant.set(p.variants[0] ?? null);
+        // Use DB image as initial placeholder; imageService gallery replaces it below
         this.selectedImage.set(p.images[0] ?? p.imageUrl);
         this.loading.set(false);
         this.loadRelated(id);
-        this.imageService.getGalleryImages(p.name, p.categoryName, p.id).subscribe(urls => {
+        // Always fetch working gallery URLs from the backend — CDN URLs
+        // (cdn.grofers.com) are CORS-blocked and must be resolved.
+        // Passing p.imageUrl lets the service short-circuit for uploaded
+        // images (/uploads/…) so they're never overridden by Unsplash URLs.
+        this.imageService.getGalleryImages(p.name, p.categoryName, p.id, p.imageUrl).subscribe(urls => {
           if (urls.length > 0) {
             this.galleryImages.set(urls);
             this.selectedImage.set(urls[0]);
@@ -475,7 +481,7 @@ export class ProductDetailComponent implements OnInit {
 
   selectVariant(v: IProductVariant): void {
     this.selectedVariant.set(v);
-    if (v.imageUrl) this.selectedImage.set(v.imageUrl);
+    if (v.imageUrl) this.selectedImage.set(resolveImageUrl(v.imageUrl, this.product()?.categoryName ?? ''));
   }
 
   addToCart(): void {

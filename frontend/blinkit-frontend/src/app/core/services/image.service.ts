@@ -7,7 +7,23 @@ import { catchError, map } from 'rxjs/operators';
 export class ImageService {
   private readonly http = inject(HttpClient);
 
-  getProductImage(name: string, category: string, productId: string): Observable<string> {
+  /**
+   * Returns a working image URL for a product.
+   *
+   * If `existingUrl` is an uploaded file path (/uploads/…) it is returned
+   * immediately without any HTTP call — uploaded images must never be
+   * overridden by an Unsplash result.
+   *
+   * For CDN URLs (cdn.grofers.com is CORS/Referer-blocked) the backend
+   * resolves a working Unsplash replacement.
+   */
+  getProductImage(
+    name: string,
+    category: string,
+    productId: string,
+    existingUrl?: string,
+  ): Observable<string> {
+    if (existingUrl?.includes('/uploads/')) return of(existingUrl);
     return this.http
       .get<{ url: string }>(
         `/api/images/product?name=${encodeURIComponent(name)}&category=${encodeURIComponent(category)}&seed=${productId}`,
@@ -18,7 +34,19 @@ export class ImageService {
       );
   }
 
-  getGalleryImages(name: string, category: string, productId: string): Observable<string[]> {
+  /**
+   * Returns gallery URLs for a product detail page.
+   *
+   * If `existingUrl` is an uploaded file, returns it as a single-item array
+   * so the gallery shows the uploaded image instead of Unsplash images.
+   */
+  getGalleryImages(
+    name: string,
+    category: string,
+    productId: string,
+    existingUrl?: string,
+  ): Observable<string[]> {
+    if (existingUrl?.includes('/uploads/')) return of([existingUrl]);
     return this.http
       .get<{ urls: string[] }>(
         `/api/images/gallery?name=${encodeURIComponent(name)}&category=${encodeURIComponent(category)}&seed=${productId}&count=4`,
@@ -29,7 +57,18 @@ export class ImageService {
       );
   }
 
-  getCategoryImage(categoryName: string, categoryId: string): Observable<string> {
+  /**
+   * Returns a working image URL for a category icon.
+   *
+   * If `existingUrl` is an uploaded file path (/uploads/…) it is returned
+   * immediately — uploaded category icons must never be replaced by Unsplash.
+   */
+  getCategoryImage(
+    categoryName: string,
+    categoryId: string,
+    existingUrl?: string,
+  ): Observable<string> {
+    if (existingUrl?.includes('/uploads/')) return of(existingUrl);
     return this.http
       .get<{ url: string }>(
         `/api/images/category?name=${encodeURIComponent(categoryName)}&seed=${categoryId}`,

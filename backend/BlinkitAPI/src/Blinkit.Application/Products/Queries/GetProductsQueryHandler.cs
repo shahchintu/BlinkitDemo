@@ -95,11 +95,12 @@ public class GetProductsQueryHandler(IBlinkitDbContext db)
             .Select((v, i) => new ProductVariantDto(
                 v.Id, v.Unit, v.Price, v.DiscountPrice, v.StockQty,
                 string.IsNullOrEmpty(v.ImageUrl) ? firstImageUrl : v.ImageUrl,
-                v.DisplayOrder))
+                v.DisplayOrder,
+                ImageType(string.IsNullOrEmpty(v.ImageUrl) ? firstImageUrl : v.ImageUrl)))
             .ToList();
 
         var defaultVariant = variants.FirstOrDefault()
-            ?? new ProductVariantDto(Guid.Empty, string.Empty, 0, null, 0, string.Empty, 0);
+            ?? new ProductVariantDto(Guid.Empty, string.Empty, 0, null, 0, string.Empty, 0, "url");
 
         return new ProductDto(
             Id: p.Id,
@@ -117,7 +118,11 @@ public class GetProductsQueryHandler(IBlinkitDbContext db)
                 .ToList(),
             RelatedTags: p.Tags.Select(t => t.Tag).ToList(),
             Images: p.Images.OrderBy(i => i.DisplayOrder).Select(i => i.ImageUrl).ToList(),
-            HasVariants: variants.Count > 1
+            HasVariants: variants.Count > 1,
+            ImageType: ImageType(p.Images.OrderBy(i => i.DisplayOrder).FirstOrDefault()?.ImageUrl ?? string.Empty)
         );
     }
+
+    private static string ImageType(string imageUrl) =>
+        imageUrl.Contains("/uploads/") ? "uploaded" : "url";
 }
