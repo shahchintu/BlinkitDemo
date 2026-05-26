@@ -1,9 +1,10 @@
 import {
-  ChangeDetectionStrategy, Component, inject, OnInit, signal, ViewChild,
+  ChangeDetectionStrategy, Component, inject, OnInit, QueryList,
+  signal, ViewChild, ViewChildren,
 } from '@angular/core';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { debounceTime, distinctUntilChanged, forkJoin, of } from 'rxjs';
 import { AdminService, ProductRequest } from '../../../core/services/admin.service';
 import { ImageService } from '../../../core/services/image.service';
 import { ICategory, IProduct } from '../../../core/models';
@@ -77,15 +78,47 @@ import { ImagePickerComponent } from '../../../shared/components/image-picker/im
             </app-image-picker>
           </div>
 
-          <!-- Gallery images (additional URLs) -->
-          <div>
-            <label class="block text-xs font-medium text-[#666666] mb-1">
-              Additional Gallery URLs (comma-separated)
-            </label>
-            <input formControlName="images"
-              placeholder="https://cdn.grofers.com/..."
-              class="w-full border border-[#E0E0E0] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#0C831F]" />
+          <!-- ──────── Additional Gallery Images ──────── -->
+          <div class="border border-[#E0E0E0] rounded-xl p-4 bg-white">
+            <div class="flex justify-between items-center mb-3">
+              <label class="text-xs font-bold text-[#666666] uppercase tracking-wide">
+                Additional Gallery Images
+              </label>
+              <button type="button"
+                class="text-xs text-[#0C831F] font-semibold hover:underline flex items-center gap-1"
+                (click)="addGallerySlot()">
+                + Add Image
+              </button>
+            </div>
+
+            @if (galleryUrls().length === 0) {
+              <p class="text-xs text-[#999] py-1 text-center">
+                No extra gallery images. Click "+ Add Image" to add more.
+              </p>
+            }
+
+            @for (url of galleryUrls(); track $index; let i = $index) {
+              <div class="border border-[#F0F0F0] rounded-xl p-3 mb-3 bg-gray-50 last:mb-0">
+                <div class="flex justify-between items-center mb-2">
+                  <span class="text-[11px] font-semibold text-[#666]">Gallery Image {{ i + 1 }}</span>
+                  <button type="button"
+                    class="text-[#F44336] text-xs font-semibold hover:underline"
+                    (click)="removeGallerySlot(i)">
+                    Remove
+                  </button>
+                </div>
+                <app-image-picker
+                  #galleryPicker
+                  [entityId]="editingId() || ''"
+                  entityType="product"
+                  [currentImageUrl]="url"
+                  label=""
+                  (imageUrlChange)="onGalleryImageChange(i, $event)">
+                </app-image-picker>
+              </div>
+            }
           </div>
+          <!-- ─────────────────────────────────────────── -->
 
           <!-- Variants -->
           <div>
@@ -224,13 +257,17 @@ export class AdminProductsComponent implements OnInit {
   private readonly snackBar     = inject(MatSnackBar);
   private readonly imageService = inject(ImageService);
 
-  /** Reference to the main image picker (inside @if, so static: false) */
+  /** Main product image picker (inside @if → static: false) */
   @ViewChild('mainImgPicker') mainImgPicker?: ImagePickerComponent;
+
+  /** Gallery image pickers collected in DOM order from the @for loop */
+  @ViewChildren('galleryPicker') galleryPickers?: QueryList<ImagePickerComponent>;
 
   readonly products      = signal<IProduct[]>([]);
   readonly categories    = signal<ICategory[]>([]);
   readonly productImages = signal<Record<string, string>>({});
   readonly mainImageUrl  = signal('');
+  readonly galleryUrls   = signal<string[]>([]);
   readonly loading       = signal(true);
   readonly saving        = signal(false);
   readonly showForm      = signal(false);
@@ -250,7 +287,6 @@ export class AdminProductsComponent implements OnInit {
     categoryId:  new FormControl('', [Validators.required]),
     description: new FormControl('', [Validators.required, Validators.minLength(10)]),
     tags:        new FormControl(''),
-    images:      new FormControl(''),
     variants:    new FormArray([this.newVariantGroup()]),
   });
 
@@ -316,9 +352,30 @@ export class AdminProductsComponent implements OnInit {
     if (ctrl) ctrl.setValue(url);
   }
 
+  // ── Gallery slot helpers ──────────────────────────────────────────────────
+
+  addGallerySlot(): void {
+    this.galleryUrls.update(urls => [...urls, '']);
+  }
+
+  removeGallerySlot(i: number): void {
+    this.galleryUrls.update(urls => urls.filter((_, idx) => idx !== i));
+  }
+
+  onGalleryImageChange(i: number, url: string): void {
+    this.galleryUrls.update(urls => {
+      const copy = [...urls];
+      copy[i] = url;
+      return copy;
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+
   openForm(product: IProduct | null): void {
     this.editingId.set(product?.id ?? null);
     this.mainImageUrl.set('');
+    this.galleryUrls.set([]);
     this.productForm.reset();
     while (this.variantsArray.length > 1) this.variantsArray.removeAt(1);
 
@@ -328,10 +385,10 @@ export class AdminProductsComponent implements OnInit {
         categoryId:  product.categoryId,
         description: product.description,
         tags:        product.relatedTags.join(', '),
-        // Additional gallery images (skip index 0 — shown in the picker)
-        images: product.images.slice(1).join(', '),
       });
       this.mainImageUrl.set(product.images[0] ?? product.imageUrl ?? '');
+      // Additional gallery images (index 1 onward)
+      this.galleryUrls.set(product.images.slice(1).filter(Boolean));
 
       this.variantsArray.clear();
       product.variants.forEach(v => {
@@ -350,6 +407,7 @@ export class AdminProductsComponent implements OnInit {
     this.showForm.set(false);
     this.editingId.set(null);
     this.mainImageUrl.set('');
+    this.galleryUrls.set([]);
   }
 
   saveProduct(): void {
@@ -361,15 +419,18 @@ export class AdminProductsComponent implements OnInit {
 
     const v = this.productForm.value;
 
-    // Blob URLs (pending upload, no entityId yet) must not reach the backend
+    // Blob URLs (pending upload before entity ID is known) must not reach the backend
     const isBlob = (url: string | null | undefined) => (url ?? '').startsWith('blob:');
 
-    const mainImg         = this.mainImageUrl();
-    const additionalImgs  = (v.images ?? '').split(',').map((u: string) => u.trim()).filter(Boolean);
-    const mainImgForReq   = isBlob(mainImg) ? '' : mainImg;
-    const images          = mainImgForReq
-      ? [mainImgForReq, ...additionalImgs]
-      : additionalImgs;
+    const mainImg        = this.mainImageUrl();
+    const mainImgForReq  = isBlob(mainImg) ? '' : mainImg;
+
+    // Gallery: filter out blob URLs (those will be uploaded after create)
+    const galleryImgsForReq = this.galleryUrls().filter(u => u && !isBlob(u));
+
+    const images = mainImgForReq
+      ? [mainImgForReq, ...galleryImgsForReq]
+      : galleryImgsForReq;
 
     type RawVariant = {
       id: string | null;
@@ -388,14 +449,14 @@ export class AdminProductsComponent implements OnInit {
       images,
       attributes:  [],
       variants:    (v.variants as RawVariant[]).map((vv, i) => ({
-        id:           vv.id || undefined,
-        unit:         vv.unit,
-        price:        vv.price,
+        id:            vv.id || undefined,
+        unit:          vv.unit,
+        price:         vv.price,
         discountPrice: vv.discountPrice,
-        stockQty:     vv.stockQty,
+        stockQty:      vv.stockQty,
         // Variant blob URLs are dropped — user uploads after saving
-        imageUrl:     isBlob(vv.imageUrl) ? '' : (vv.imageUrl || mainImgForReq),
-        displayOrder: i + 1,
+        imageUrl:      isBlob(vv.imageUrl) ? '' : (vv.imageUrl || mainImgForReq),
+        displayOrder:  i + 1,
       })),
     };
 
@@ -414,29 +475,52 @@ export class AdminProductsComponent implements OnInit {
     };
 
     if (id) {
+      // EDIT mode — variant pickers and gallery pickers already uploaded immediately
       this.adminService.updateProduct(id, req).subscribe({ next: done, error: fail });
     } else {
-      // ADD mode: create first, then upload pending main image if any
+      // ADD mode: create product first, then upload any pending files
       this.adminService.createProduct(req).subscribe({
         next: (created) => {
-          const picker = this.mainImgPicker;
-          if (picker?.pendingFile()) {
-            // Upload the pending file using the real product ID
-            picker.uploadPendingFile(created.id).subscribe({
-              next: (imageUrl) => {
-                // Update product images with the now-uploaded URL
-                const updatedReq: ProductRequest = {
-                  ...req,
-                  images: [imageUrl, ...additionalImgs],
-                };
-                this.adminService.updateProduct(created.id, updatedReq).subscribe();
-                done();
-              },
-              error: () => done(), // upload failed — product saved without image
-            });
-          } else {
+          const mainPicker         = this.mainImgPicker;
+          const galleryPickersList = this.galleryPickers?.toArray() ?? [];
+
+          const hasPendingMain    = !!mainPicker?.pendingFile();
+          const hasPendingGallery = galleryPickersList.some(p => !!p.pendingFile());
+
+          if (!hasPendingMain && !hasPendingGallery) {
+            // No pending uploads — product already saved with its final URLs
             done();
+            return;
           }
+
+          // Upload main image (or pass through the real URL if none pending)
+          const mainUpload$ = hasPendingMain
+            ? mainPicker!.uploadPendingFile(created.id)
+            : of(mainImgForReq);
+
+          // Upload each gallery slot that has a pending file; pass through real URLs otherwise
+          const galleryUploads$ = galleryPickersList.map((picker, i) =>
+            picker.pendingFile()
+              ? picker.uploadPendingFile(created.id)
+              : of(this.galleryUrls()[i] ?? ''),
+          );
+
+          // Wait for all uploads to complete, then update the product with real URLs
+          forkJoin([mainUpload$, ...galleryUploads$]).subscribe({
+            next: ([mainUrl, ...uploadedGallery]) => {
+              const realMain    = isBlob(mainUrl) ? '' : mainUrl;
+              const realGallery = (uploadedGallery as string[]).filter(u => u && !isBlob(u));
+              const finalImages = realMain ? [realMain, ...realGallery] : realGallery;
+
+              if (finalImages.length > 0) {
+                this.adminService.updateProduct(created.id, {
+                  ...req, images: finalImages,
+                }).subscribe();
+              }
+              done();
+            },
+            error: () => done(), // upload failed — product saved without uploaded images
+          });
         },
         error: fail,
       });

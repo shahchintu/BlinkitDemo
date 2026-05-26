@@ -394,8 +394,6 @@ export class ProductDetailComponent implements OnInit {
   readonly isAlsoLoading = signal(true);
 
   readonly fmt = formatPrice;
-  protected readonly resolveImageUrl = resolveImageUrl;
-
   readonly whyItems = [
     { icon: '🚚', title: 'Round The Clock Delivery', sub: 'Order any time, we deliver 24×7' },
     { icon: '💸', title: 'Best Prices & Offers', sub: 'Savings on every purchase' },
@@ -433,20 +431,34 @@ export class ProductDetailComponent implements OnInit {
       next: p => {
         this.product.set(p);
         this.selectedVariant.set(p.variants[0] ?? null);
-        // Use DB image as initial placeholder; imageService gallery replaces it below
-        this.selectedImage.set(p.images[0] ?? p.imageUrl);
         this.loading.set(false);
         this.loadRelated(id);
-        // Always fetch working gallery URLs from the backend — CDN URLs
-        // (cdn.grofers.com) are CORS-blocked and must be resolved.
-        // Passing p.imageUrl lets the service short-circuit for uploaded
-        // images (/uploads/…) so they're never overridden by Unsplash URLs.
-        this.imageService.getGalleryImages(p.name, p.categoryName, p.id, p.imageUrl).subscribe(urls => {
-          if (urls.length > 0) {
-            this.galleryImages.set(urls);
-            this.selectedImage.set(urls[0]);
-          }
-        });
+
+        // ── Gallery image strategy ────────────────────────────────────────
+        // IF the product has locally-uploaded images (/uploads/… in images[])
+        //   → use the full images[] array directly — no HTTP call needed.
+        //     resolveImageUrl converts /uploads/… → https://localhost:7001/…
+        // ELSE (CDN / external URLs — cdn.grofers.com is CORS-blocked)
+        //   → call imageService which proxies via Unsplash on the backend.
+        // ─────────────────────────────────────────────────────────────────
+        const hasUploadedImages = p.images.some(img => img?.includes('/uploads/'));
+
+        if (hasUploadedImages) {
+          const resolved = p.images
+            .filter(img => img?.trim())
+            .map(img => resolveImageUrl(img, p.categoryName));
+          this.galleryImages.set(resolved);
+          this.selectedImage.set(resolved[0] ?? '');
+        } else {
+          // Initial placeholder while Unsplash resolves
+          this.selectedImage.set(p.images[0] ?? p.imageUrl);
+          this.imageService.getGalleryImages(p.name, p.categoryName, p.id).subscribe(urls => {
+            if (urls.length > 0) {
+              this.galleryImages.set(urls);
+              this.selectedImage.set(urls[0]);
+            }
+          });
+        }
       },
       error: () => { this.error.set(true); this.loading.set(false); },
     });
@@ -481,7 +493,12 @@ export class ProductDetailComponent implements OnInit {
 
   selectVariant(v: IProductVariant): void {
     this.selectedVariant.set(v);
-    if (v.imageUrl) this.selectedImage.set(resolveImageUrl(v.imageUrl, this.product()?.categoryName ?? ''));
+    // Always reset to the first gallery image when pack size changes.
+    // Variant imageUrls from the DB point to cdn.grofers.com (CORS-blocked) —
+    // using them causes broken images / fallback snowy landscapes.
+    // The gallery already holds working resolved URLs from imageService.
+    const gallery = this.galleryImages();
+    if (gallery.length > 0) this.selectedImage.set(gallery[0]);
   }
 
   addToCart(): void {

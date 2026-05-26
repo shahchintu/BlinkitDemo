@@ -17,6 +17,22 @@
       "PackagePath": "staticwebassets\\uploads\\products\\product_b1584e67-2b35-4fbe-84e9-090c62c26359_1779693991051.webp"
     },
     {
+      "Id": "H:\\Claude - Blinkit Project\\BlinkitDemo\\backend\\BlinkitAPI\\src\\Blinkit.API\\wwwroot\\uploads\\products\\product_b1584e67-2b35-4fbe-84e9-090c62c26359_1779778751058.jpg",
+      "PackagePath": "staticwebassets\\uploads\\products\\product_b1584e67-2b35-4fbe-84e9-090c62c26359_1779778751058.jpg"
+    },
+    {
+      "Id": "H:\\Claude - Blinkit Project\\BlinkitDemo\\backend\\BlinkitAPI\\src\\Blinkit.API\\wwwroot\\uploads\\products\\product_b1584e67-2b35-4fbe-84e9-090c62c26359_1779778775350.jpg",
+      "PackagePath": "staticwebassets\\uploads\\products\\product_b1584e67-2b35-4fbe-84e9-090c62c26359_1779778775350.jpg"
+    },
+    {
+      "Id": "H:\\Claude - Blinkit Project\\BlinkitDemo\\backend\\BlinkitAPI\\src\\Blinkit.API\\wwwroot\\uploads\\products\\product_b1584e67-2b35-4fbe-84e9-090c62c26359_1779778794478.jpg",
+      "PackagePath": "staticwebassets\\uploads\\products\\product_b1584e67-2b35-4fbe-84e9-090c62c26359_1779778794478.jpg"
+    },
+    {
+      "Id": "H:\\Claude - Blinkit Project\\BlinkitDemo\\backend\\BlinkitAPI\\src\\Blinkit.API\\wwwroot\\uploads\\products\\product_b1584e67-2b35-4fbe-84e9-090c62c26359_1779778803009.jpg",
+      "PackagePath": "staticwebassets\\uploads\\products\\product_b1584e67-2b35-4fbe-84e9-090c62c26359_1779778803009.jpg"
+    },
+    {
       "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.Blinkit.API.Microsoft.AspNetCore.StaticWebAssets.props",
       "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
     },

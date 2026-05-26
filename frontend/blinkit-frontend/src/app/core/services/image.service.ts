@@ -35,18 +35,18 @@ export class ImageService {
   }
 
   /**
-   * Returns gallery URLs for a product detail page.
+   * Returns gallery URLs for a product detail page (CDN / Unsplash path).
    *
-   * If `existingUrl` is an uploaded file, returns it as a single-item array
-   * so the gallery shows the uploaded image instead of Unsplash images.
+   * Only call this for products whose images come from CDN or URL sources.
+   * For products with locally-uploaded images (/uploads/…) the caller
+   * (ProductDetailComponent) resolves and uses p.images[] directly — no HTTP
+   * call is needed and this method must not be involved in that path.
    */
   getGalleryImages(
     name: string,
     category: string,
     productId: string,
-    existingUrl?: string,
   ): Observable<string[]> {
-    if (existingUrl?.includes('/uploads/')) return of([existingUrl]);
     return this.http
       .get<{ urls: string[] }>(
         `/api/images/gallery?name=${encodeURIComponent(name)}&category=${encodeURIComponent(category)}&seed=${productId}&count=4`,

@@ -95,24 +95,41 @@ export class CartService {
 
   // ── ADD ITEM ──────────────────────────────────────
   addItem(product: IProduct, variant: IProductVariant): Observable<void> {
-    // 1. Update UI immediately
+    // 1. Optimistic update — instant UI feedback using a temporary ID
     this.cartStore.addItem(product, variant);
 
-    // 2. Sync to server silently
     if (this.authStore.isAuthenticated()) {
-      return this.http.post('/api/cart/items', {
-        productId: product.id,
-        variantId: variant.id,
-        quantity: 1
-      }).pipe(
+      // 2. Persist to server and replace the temp frontend UUID with the
+      //    real server-generated UUID from the response.
+      //    Without this, DELETE /api/cart/items/{tempId} returns 404 (item
+      //    not found) and the item silently survives in the DB, reappearing
+      //    on every page refresh.
+      return this.http.post<{ items: any[]; subTotal: number; itemCount: number }>(
+        '/api/cart/items',
+        { productId: product.id, variantId: variant.id, quantity: 1 },
+      ).pipe(
+        tap(data => {
+          if (!data?.items) return;
+          // Sync the store with real server IDs so remove/update calls use
+          // the correct ID that the backend actually knows about.
+          const items: ICartItem[] = data.items.map(i => ({
+            id:        i.id,
+            productId: i.productId,
+            product:   i.product   ?? product,   // server data or local fallback
+            variantId: i.variantId,
+            variant:   i.variant   ?? variant,   // server data or local fallback
+            quantity:  i.quantity,
+            unitPrice: i.unitPrice,
+          }));
+          this.cartStore.setItems(items);
+        }),
         map(() => void 0),
         catchError(() => {
-          // On error only: reload from server
+          // On error: reload from server to restore consistent state
           this.loadCart().subscribe();
           return of(void 0);
-        })
+        }),
       );
-      // NEVER call loadCart() on success
     } else {
       this.saveGuestCart();
       return of(void 0);

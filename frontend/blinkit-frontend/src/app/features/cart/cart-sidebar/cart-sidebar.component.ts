@@ -437,10 +437,10 @@ export class CartSidebarComponent {
   constructor() {
     effect(() => {
       this.cartStore.cartItems().forEach(item => {
-        this.fetchImageIfNeeded(item.product.name, item.product.categoryName, item.productId);
+        this.fetchCartItemImage(item);
       });
       this.relatedProducts().forEach(rp => {
-        this.fetchImageIfNeeded(rp.name, rp.categoryName, rp.id);
+        this.fetchRelatedProductImage(rp);
       });
     });
 
@@ -457,12 +457,52 @@ export class CartSidebarComponent {
     });
   }
 
-  private fetchImageIfNeeded(name: string, category: string, id: string): void {
-    if (!this.productImages()[id]) {
-      this.imageService.getProductImage(name, category, id).subscribe(url => {
+  /**
+   * Resolves the display image for a cart item using the same if/else
+   * strategy as ProductDetailComponent:
+   *
+   * IF the product has locally-uploaded images (/uploads/…)
+   *   → use the first gallery image directly via resolveImageUrl.
+   *     No HTTP call — uploaded images are always available on the server.
+   * ELSE (CDN / external URLs that may be CORS-blocked)
+   *   → call imageService which proxies via Unsplash on the backend.
+   */
+  private fetchCartItemImage(item: ICartItem): void {
+    const id = item.productId;
+    if (this.productImages()[id]) return;
+
+    const hasUploaded = item.product.images?.some(img => img?.includes('/uploads/'));
+    if (hasUploaded) {
+      const first = item.product.images.find(img => img?.trim()) ?? item.product.imageUrl;
+      const resolved = resolveImageUrl(first, item.product.categoryName);
+      if (resolved) this.productImages.update(imgs => ({ ...imgs, [id]: resolved }));
+      return;
+    }
+
+    // CDN / URL product — pass existingUrl so the service can short-circuit
+    // for any uploaded imageUrl without triggering a duplicate Unsplash call.
+    this.imageService
+      .getProductImage(item.product.name, item.product.categoryName, id, item.product.imageUrl)
+      .subscribe(url => {
         if (url) this.productImages.update(imgs => ({ ...imgs, [id]: url }));
       });
+  }
+
+  /** Resolves the image for a related/suggested product card in the cart. */
+  private fetchRelatedProductImage(rp: IProduct): void {
+    if (this.productImages()[rp.id]) return;
+    const hasUploaded = rp.images?.some(img => img?.includes('/uploads/'));
+    if (hasUploaded) {
+      const first = rp.images.find(img => img?.trim()) ?? rp.imageUrl;
+      const resolved = resolveImageUrl(first, rp.categoryName);
+      if (resolved) this.productImages.update(imgs => ({ ...imgs, [rp.id]: resolved }));
+      return;
     }
+    this.imageService
+      .getProductImage(rp.name, rp.categoryName, rp.id, rp.imageUrl)
+      .subscribe(url => {
+        if (url) this.productImages.update(imgs => ({ ...imgs, [rp.id]: url }));
+      });
   }
 
   increment(item: ICartItem): void {

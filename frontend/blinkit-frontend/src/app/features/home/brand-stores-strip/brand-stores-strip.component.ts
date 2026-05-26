@@ -10,17 +10,17 @@ interface Brand { name: string; slug: string; emoji: string; bg: string; }
   template: `
     <div class="px-4 mt-6 mb-4 max-w-[1400px] mx-auto">
       <h2 class="text-[22px] font-bold text-[#1A1A1A] mb-3">Brand Stores</h2>
-      <div class="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
+      <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-3">
         @for (brand of brands; track brand.slug) {
           <button
-            class="flex-shrink-0 flex flex-col items-center gap-1.5 group"
+            class="flex flex-col items-center gap-1.5 group w-full"
             (click)="go(brand.slug)"
           >
-            <div class="w-20 h-20 rounded-2xl flex items-center justify-center text-3xl border border-[#E0E0E0] bg-white group-hover:border-[#0C831F] transition-colors shadow-sm"
+            <div class="w-full aspect-square max-w-[72px] mx-auto rounded-2xl flex items-center justify-center text-2xl border border-[#E0E0E0] group-hover:border-[#0C831F] transition-colors shadow-sm"
               [style.background]="brand.bg">
               {{ brand.emoji }}
             </div>
-            <span class="text-xs font-medium text-gray-700 text-center w-20 leading-tight">{{ brand.name }}</span>
+            <span class="text-xs font-medium text-gray-700 text-center w-full leading-tight truncate">{{ brand.name }}</span>
           </button>
         }
       </div>

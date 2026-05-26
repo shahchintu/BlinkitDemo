@@ -45,11 +45,6 @@ interface CategorySection {
                 <h2 class="text-[20px] font-bold text-[#1A1A1A]">
                   {{ section.category.name }}
                 </h2>
-                @if (!section.isLoading && section.products.length > 0) {
-                  <span class="text-[13px] text-[#999] font-medium">
-                    {{ section.products.length }} items
-                  </span>
-                }
               </div>
               <a [routerLink]="['/products']"
                  [queryParams]="{ category: section.category.id }"
@@ -100,7 +95,7 @@ export class HomeComponent implements OnInit {
   private readonly router = inject(Router);
 
   readonly categorySections = signal<CategorySection[]>([]);
-  readonly skeletons = Array(6);
+  readonly skeletons = Array(15);
 
   onCategorySelected(categoryId: string | null): void {
     if (categoryId) {
@@ -120,7 +115,7 @@ export class HomeComponent implements OnInit {
           { category: cat, products: [], isLoading: true },
         ]);
 
-        this.productService.getProducts({ categoryId: cat.id, pageSize: 10, page: 1 })
+        this.productService.getProducts({ categoryId: cat.id, pageSize: 15, page: 1 })
           .subscribe(result => {
             this.categorySections.update(sections =>
               sections.map(s =>

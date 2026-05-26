@@ -79,7 +79,7 @@ const STATUS_CHIP: Record<string, string> = {
                   }
                 </div>
               }
-              <app-order-detail [order]="order" />
+              <app-order-detail [order]="order" [orderImages]="orderItemImages()" />
             </div>
           }
         }
@@ -132,7 +132,7 @@ export class AdminOrdersComponent implements OnInit {
     });
   }
 
-  onStatusFilter(status: string): void {
+  onStatusFilter(_status: string): void {
     this.page.set(1);
     this.load();
   }
@@ -147,10 +147,18 @@ export class AdminOrdersComponent implements OnInit {
     this.expandedId.set(id);
     const order = this.orders().find(o => o.id === id);
     order?.items.forEach(item => {
-      if (!this.orderItemImages()[item.productId]) {
-        this.imageService.getProductImage(item.productName, '', item.productId)
-          .subscribe(url => this.orderItemImages.update(imgs => ({ ...imgs, [item.productId]: url })));
+      if (this.orderItemImages()[item.productId]) return;
+      // Uploaded image — resolve URL directly without calling imageService
+      if (item.productImageUrl?.includes('/uploads/')) {
+        this.orderItemImages.update(imgs => ({
+          ...imgs,
+          [item.productId]: resolveImageUrl(item.productImageUrl),
+        }));
+        return;
       }
+      // CDN / Unsplash image — let imageService resolve
+      this.imageService.getProductImage(item.productName, '', item.productId, item.productImageUrl)
+        .subscribe(url => this.orderItemImages.update(imgs => ({ ...imgs, [item.productId]: url })));
     });
   }
 

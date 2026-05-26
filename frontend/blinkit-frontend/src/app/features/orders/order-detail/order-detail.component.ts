@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { IOrder } from '../../../core/models';
-import { formatPrice } from '../../../shared/utils';
+import { formatPrice, resolveImageUrl } from '../../../shared/utils';
 import { OrderStatusTrackerComponent } from '../order-status-tracker/order-status-tracker.component';
 
 @Component({
@@ -17,7 +17,7 @@ import { OrderStatusTrackerComponent } from '../order-status-tracker/order-statu
       <div class="space-y-2 mt-4">
         @for (item of order.items; track item.id) {
           <div class="flex items-center gap-3">
-            <img [src]="orderImages[item.productId] || item.productImageUrl" [alt]="item.productName"
+            <img [src]="resolveImg(orderImages[item.productId] || item.productImageUrl)" [alt]="item.productName"
               class="w-10 h-10 rounded-lg object-contain bg-gray-50 p-1" loading="lazy"
               (error)="onImgError($event)" />
             <div class="flex-1 min-w-0">
@@ -73,6 +73,7 @@ export class OrderDetailComponent {
   @Input() orderImages: Record<string, string> = {};
 
   fmt = formatPrice;
+  resolveImg = resolveImageUrl;
 
   onImgError(event: Event): void {
     (event.target as HTMLImageElement).src = 'https://picsum.photos/seed/product/200/200';

@@ -176,7 +176,10 @@ export class OrderHistoryComponent implements OnInit {
         this.loading.set(false);
         orders.forEach(order => {
           order.items?.forEach(item => {
-            this.imageService.getProductImage(item.productName, '', item.productId)
+            // Pass existing productImageUrl so uploaded images (/uploads/…)
+            // are returned immediately and never overridden by Unsplash.
+            this.imageService
+              .getProductImage(item.productName, '', item.productId, item.productImageUrl)
               .subscribe(url => {
                 this.orderImages.update(imgs => ({ ...imgs, [item.productId]: url }));
               });
